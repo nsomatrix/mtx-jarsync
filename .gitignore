@@ -4,3 +4,4 @@ target/
 *.args
 *.jar
 !lib/*.jar
+!web/public/runtime/*.jar
