@@ -2,3 +2,5 @@ target/
 *.class
 .DS_Store
 *.args
+*.jar
+!lib/*.jar

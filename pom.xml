@@ -3,13 +3,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.angelchip</groupId>
-    <artifactId>embed-adv-menu</artifactId>
+    <groupId>matrix</groupId>
+    <artifactId>mtx-jarsync</artifactId>
     <version>3.6.3</version>
     <packaging>jar</packaging>
 
-    <name>Embed Advance Menu</name>
-    <description>Reverse-engineered and modernized source for Embed Advance Menu 3.6.3 (AngelChip) J2ME Multi-MIDlet Combiner</description>
+    <name>MTX JarSync</name>
+    <description>Modernized source for MTX JarSync (J2ME Multi-MIDlet Combiner and Switcher)</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -76,7 +76,7 @@
                     <archive>
                         <manifestFile>src/main/resources/META-INF/MANIFEST.MF</manifestFile>
                     </archive>
-                    <finalName>EmbedAdvMenu</finalName>
+                    <finalName>mtx-jarsync</finalName>
                 </configuration>
             </plugin>
         </plugins>

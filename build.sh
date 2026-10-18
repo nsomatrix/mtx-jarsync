@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "=========================================================="
-echo " Building Embed Advance Menu 3.6.3 (Clean J2ME Tool Source)"
+echo " Building MTX JarSync 3.6.3 (Clean J2ME Tool Source)"
 echo "=========================================================="
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -10,7 +10,7 @@ cd "${SCRIPT_DIR}"
 
 BUILD_DIR="target"
 CLASSES_DIR="${BUILD_DIR}/classes"
-TARGET_JAR="${BUILD_DIR}/EmbedAdvMenu.jar"
+TARGET_JAR="${BUILD_DIR}/mtx-jarsync.jar"
 LIBS_BUILD_DIR="${BUILD_DIR}/libs_build"
 GEN_RES_DIR="${BUILD_DIR}/generated_resources"
 
@@ -19,29 +19,29 @@ rm -rf "${CLASSES_DIR}" "${LIBS_BUILD_DIR}" "${GEN_RES_DIR}"
 mkdir -p "${CLASSES_DIR}" "${LIBS_BUILD_DIR}" "${GEN_RES_DIR}"
 
 echo "[2/5] Compiling runtime injection libraries from source..."
-# 1. MrQuyetlibs (Core isolation runtime)
-mkdir -p "${LIBS_BUILD_DIR}/mrquyetlibs"
+# 1. mtx-core (Core isolation runtime)
+mkdir -p "${LIBS_BUILD_DIR}/mtx-core"
 javac -source 1.8 -target 1.8 -Xlint:-options \
       -cp "lib/cldcapi11.jar:lib/midpapi20.jar:lib/microemu-jsr-75.jar" \
-      -d "${LIBS_BUILD_DIR}/mrquyetlibs" \
-      $(find libs/mrquyetlibs/src -name "*.java" | sort)
-jar cf "${GEN_RES_DIR}/MrQuyetlibs.jar" -C "${LIBS_BUILD_DIR}/mrquyetlibs" .
+      -d "${LIBS_BUILD_DIR}/mtx-core" \
+      $(find libs/mtx-core/src -name "*.java" | sort)
+jar cf "${GEN_RES_DIR}/mtx-core.jar" -C "${LIBS_BUILD_DIR}/mtx-core" .
 
-# 2. MrQuyetlib (Standard in-game switcher overlay)
-mkdir -p "${LIBS_BUILD_DIR}/mrquyetlib"
+# 2. mtx-switcher (Standard in-game switcher overlay)
+mkdir -p "${LIBS_BUILD_DIR}/mtx-overlay"
 javac -source 1.8 -target 1.8 -Xlint:-options \
-      -cp "lib/cldcapi11.jar:lib/midpapi20.jar:lib/microemu-jsr-75.jar:lib/nokia-ui.jar:${LIBS_BUILD_DIR}/mrquyetlibs" \
-      -d "${LIBS_BUILD_DIR}/mrquyetlib" \
-      $(find libs/mrquyetlib/src -name "*.java" | sort)
-jar cf "${GEN_RES_DIR}/MrQuyetlib.jar" -C "${LIBS_BUILD_DIR}/mrquyetlib" .
+      -cp "lib/cldcapi11.jar:lib/midpapi20.jar:lib/microemu-jsr-75.jar:lib/nokia-ui.jar:${LIBS_BUILD_DIR}/mtx-core" \
+      -d "${LIBS_BUILD_DIR}/mtx-overlay" \
+      $(find libs/mtx-overlay/src -name "*.java" | sort)
+jar cf "${GEN_RES_DIR}/mtx-switcher.jar" -C "${LIBS_BUILD_DIR}/mtx-overlay" .
 
-# 3. MrQuyetSSlib (Screenshot & PNG encoder runtime)
-mkdir -p "${LIBS_BUILD_DIR}/mrquyetsslib"
+# 3. mtx-switcher-ss (Screenshot & PNG encoder runtime)
+mkdir -p "${LIBS_BUILD_DIR}/mtx-overlay-screenshot"
 javac -source 1.8 -target 1.8 -Xlint:-options \
-      -cp "lib/cldcapi11.jar:lib/midpapi20.jar:lib/microemu-jsr-75.jar:lib/nokia-ui.jar:${LIBS_BUILD_DIR}/mrquyetlibs" \
-      -d "${LIBS_BUILD_DIR}/mrquyetsslib" \
-      $(find libs/mrquyetsslib/src -name "*.java" | sort)
-jar cf "${GEN_RES_DIR}/MrQuyetSSlib.jar" -C "${LIBS_BUILD_DIR}/mrquyetsslib" .
+      -cp "lib/cldcapi11.jar:lib/midpapi20.jar:lib/microemu-jsr-75.jar:lib/nokia-ui.jar:${LIBS_BUILD_DIR}/mtx-core" \
+      -d "${LIBS_BUILD_DIR}/mtx-overlay-screenshot" \
+      $(find libs/mtx-overlay-screenshot/src -name "*.java" | sort)
+jar cf "${GEN_RES_DIR}/mtx-switcher-ss.jar" -C "${LIBS_BUILD_DIR}/mtx-overlay-screenshot" .
 
 echo "[3/5] Compiling main editor application sources..."
 JAVA_FILES=()

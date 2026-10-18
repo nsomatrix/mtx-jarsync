@@ -1,6 +1,6 @@
-# Embed Advance Menu 3.6.3 (Clean J2ME Source)
+# MTX JarSync 3.6.3 (Clean J2ME Source)
 
-A cleanly reverse-engineered, modular, and maintainable Java source tree for **Embed Advance Menu 3.6.3** (by AngelChip / nhquyet).
+A cleanly reverse-engineered, modular, and maintainable Java source tree for **MTX JarSync 3.6.3** (by AngelChip / nhquyet).
 
 This tool is a specialized J2ME (CLDC 1.1 / MIDP 2.0 / JSR-75) utility designed to dynamically merge multiple MIDlet JAR applications into a single unified JAR container with an interactive runtime switcher menu, bytecode API hooking, isolated RecordStore partitions, and static variable isolation.
 
@@ -8,12 +8,12 @@ This tool is a specialized J2ME (CLDC 1.1 / MIDP 2.0 / JSR-75) utility designed 
 
 ## 1. Architectural Overview & Reverse Engineering Analysis
 
-The original application (`EmbedAdvMenu.jar`) contained 34 root classes obfuscated with ProGuard (using single-letter uppercase `A`–`G` and lowercase `a`–`z` names), creating severe case-folding collisions on Windows/macOS filesystems. Through binary and bytecode analysis via REA, CFR, and Vineflower decompilers, the architecture was fully decoded and refactored into domain packages:
+The original application (`mtx-jarsync.jar`) contained 34 root classes obfuscated with ProGuard (using single-letter uppercase `A`–`G` and lowercase `a`–`z` names), creating severe case-folding collisions on Windows/macOS filesystems. Through binary and bytecode analysis via REA, CFR, and Vineflower decompilers, the architecture was fully decoded and refactored into domain packages:
 
 ```
 src/main/
 ├── java/
-│   └── nhquyet/
+│   └── mtx/jarsync/
 │       ├── Midlet.java                 # Main MIDlet entry & application workflow coordinator
 │       ├── bytecode/                   # JVM classfile binary structures, parser & patcher
 │       │   ├── AttributeInfo.java      # JVM attribute representation (Code, StackMap, etc.)
@@ -54,37 +54,37 @@ src/main/
 
 | Original Class | Target Clean Class | Description |
 | :--- | :--- | :--- |
-| `nhquyet/Midlet` | `nhquyet.Midlet` | Main J2ME MIDlet & UI Controller |
-| `m` | `nhquyet.bytecode.CpInfo` | Abstract Constant Pool item |
-| `t` | `nhquyet.bytecode.ConstantUtf8Info` | Tag 1: CONSTANT_Utf8 |
-| `E` | `nhquyet.bytecode.ConstantIntegerInfo` | Tag 3: CONSTANT_Integer |
-| `G` | `nhquyet.bytecode.ConstantFloatInfo` | Tag 4: CONSTANT_Float |
-| `a` | `nhquyet.bytecode.ConstantLongInfo` | Tag 5: CONSTANT_Long |
-| `y` | `nhquyet.bytecode.ConstantDoubleInfo` | Tag 6: CONSTANT_Double |
-| `b` | `nhquyet.bytecode.ConstantClassInfo` | Tag 7: CONSTANT_Class |
-| `x` | `nhquyet.bytecode.ConstantStringInfo` | Tag 8: CONSTANT_String |
-| `C` | `nhquyet.bytecode.ConstantFieldrefInfo` | Tag 9: CONSTANT_Fieldref |
-| `w` | `nhquyet.bytecode.ConstantMethodrefInfo` | Tag 10: CONSTANT_Methodref |
-| `o` | `nhquyet.bytecode.ConstantInterfaceMethodrefInfo` | Tag 11: CONSTANT_InterfaceMethodref |
-| `u` | `nhquyet.bytecode.ConstantNameAndTypeInfo` | Tag 12: CONSTANT_NameAndType |
-| `z` | `nhquyet.bytecode.ConstantDummyInfo` | 8-byte constant slot placeholder |
-| `D` | `nhquyet.bytecode.AttributeInfo` | JVM Attribute (`Code`, `StackMap`, etc.) |
-| `h` | `nhquyet.bytecode.FieldInfo` | JVM Class Field |
-| `j` | `nhquyet.bytecode.MethodInfo` | JVM Class Method |
-| `d` | `nhquyet.bytecode.ClassBuilder` | Dynamic MIDlet loader class generator |
-| `q` | `nhquyet.bytecode.ClassPatcher` | Bytecode rewriter / API hook injector |
-| `B` | `nhquyet.model.MidletEntry` | MIDlet metadata & manifest parser |
-| `f` | `nhquyet.model.StringPair` | String tuple |
-| `k` | `nhquyet.model.IntPair` | Integer coordinate tuple |
-| `g` | `nhquyet.model.Base64Resources` | Base64 decode & resource loader |
-| `e` | `nhquyet.ui.CustomChoiceCanvas` | Interactive visual menu / Choice Canvas |
-| `i` | `nhquyet.ui.TickThread` | Selection index timer thread |
-| `F` | `nhquyet.ui.ScrollThread` | Marquee scrolling thread |
-| `c` | `nhquyet.zip.ZipEntry` | ZIP entry metadata |
-| `n` | `nhquyet.zip.ZipOutputStream` | ZIP format writer |
-| `p` | `nhquyet.zip.LittleEndianOutputStream` | Buffered LE binary output stream with rewinding |
-| `r` | `nhquyet.zip.ByteInputStream` | Fast byte-array input stream with LE reads |
-| `A`, `l`, `s`, `v` | `nhquyet.zip.*` | RFC 1951 Deflate/Inflate compression engine |
+| `mtx/jarsync/Midlet` | `mtx.jarsync.Midlet` | Main J2ME MIDlet & UI Controller |
+| `m` | `mtx.jarsync.bytecode.CpInfo` | Abstract Constant Pool item |
+| `t` | `mtx.jarsync.bytecode.ConstantUtf8Info` | Tag 1: CONSTANT_Utf8 |
+| `E` | `mtx.jarsync.bytecode.ConstantIntegerInfo` | Tag 3: CONSTANT_Integer |
+| `G` | `mtx.jarsync.bytecode.ConstantFloatInfo` | Tag 4: CONSTANT_Float |
+| `a` | `mtx.jarsync.bytecode.ConstantLongInfo` | Tag 5: CONSTANT_Long |
+| `y` | `mtx.jarsync.bytecode.ConstantDoubleInfo` | Tag 6: CONSTANT_Double |
+| `b` | `mtx.jarsync.bytecode.ConstantClassInfo` | Tag 7: CONSTANT_Class |
+| `x` | `mtx.jarsync.bytecode.ConstantStringInfo` | Tag 8: CONSTANT_String |
+| `C` | `mtx.jarsync.bytecode.ConstantFieldrefInfo` | Tag 9: CONSTANT_Fieldref |
+| `w` | `mtx.jarsync.bytecode.ConstantMethodrefInfo` | Tag 10: CONSTANT_Methodref |
+| `o` | `mtx.jarsync.bytecode.ConstantInterfaceMethodrefInfo` | Tag 11: CONSTANT_InterfaceMethodref |
+| `u` | `mtx.jarsync.bytecode.ConstantNameAndTypeInfo` | Tag 12: CONSTANT_NameAndType |
+| `z` | `mtx.jarsync.bytecode.ConstantDummyInfo` | 8-byte constant slot placeholder |
+| `D` | `mtx.jarsync.bytecode.AttributeInfo` | JVM Attribute (`Code`, `StackMap`, etc.) |
+| `h` | `mtx.jarsync.bytecode.FieldInfo` | JVM Class Field |
+| `j` | `mtx.jarsync.bytecode.MethodInfo` | JVM Class Method |
+| `d` | `mtx.jarsync.bytecode.ClassBuilder` | Dynamic MIDlet loader class generator |
+| `q` | `mtx.jarsync.bytecode.ClassPatcher` | Bytecode rewriter / API hook injector |
+| `B` | `mtx.jarsync.model.MidletEntry` | MIDlet metadata & manifest parser |
+| `f` | `mtx.jarsync.model.StringPair` | String tuple |
+| `k` | `mtx.jarsync.model.IntPair` | Integer coordinate tuple |
+| `g` | `mtx.jarsync.model.Base64Resources` | Base64 decode & resource loader |
+| `e` | `mtx.jarsync.ui.CustomChoiceCanvas` | Interactive visual menu / Choice Canvas |
+| `i` | `mtx.jarsync.ui.TickThread` | Selection index timer thread |
+| `F` | `mtx.jarsync.ui.ScrollThread` | Marquee scrolling thread |
+| `c` | `mtx.jarsync.zip.ZipEntry` | ZIP entry metadata |
+| `n` | `mtx.jarsync.zip.ZipOutputStream` | ZIP format writer |
+| `p` | `mtx.jarsync.zip.LittleEndianOutputStream` | Buffered LE binary output stream with rewinding |
+| `r` | `mtx.jarsync.zip.ByteInputStream` | Fast byte-array input stream with LE reads |
+| `A`, `l`, `s`, `v` | `mtx.jarsync.zip.*` | RFC 1951 Deflate/Inflate compression engine |
 
 ---
 
@@ -114,7 +114,7 @@ Run the included build script:
 ```
 Output:
 ```
-target/EmbedAdvMenu.jar
+target/mtx-jarsync.jar
 ```
 
 ### Maven Build
@@ -124,14 +124,14 @@ mvn clean package
 ```
 Output:
 ```
-target/EmbedAdvMenu.jar
+target/mtx-jarsync.jar
 ```
 
 ---
 
 ## 5. Key Improvements Over Original Binary
 
-- **Zero Case-Folding Conflicts:** Cleanly structured into distinct packages (`nhquyet.bytecode`, `nhquyet.model`, `nhquyet.ui`, `nhquyet.zip`), fully eliminating FAT32/NTFS/APFS case collision bugs.
+- **Zero Case-Folding Conflicts:** Cleanly structured into distinct packages (`mtx.jarsync.bytecode`, `mtx.jarsync.model`, `mtx.jarsync.ui`, `mtx.jarsync.zip`), fully eliminating FAT32/NTFS/APFS case collision bugs.
 - **Pure-Java Self-Contained Engine:** Canonical GNU Classpath RFC 1951 Deflater/Inflater replaces decompiled obfuscator artifacts (`** GOTO` labels and duplicate variables).
 - **Readable & Type-Safe Identifiers:** Every constant pool tag, bytecode instruction, UI coordinate, and ZIP header field has semantic names and complete Javadoc documentation.
 - **Maintainable Standards:** Standard Maven layout (`src/main/java`, `src/main/resources`, `pom.xml`) with reproducible standalone CLI build support.
