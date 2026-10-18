@@ -1,4 +1,4 @@
-import { DataReader, DataWriter } from './DataStream';
+import { DataWriter } from './DataStream';
 
 export abstract class CpInfo {
   constructor(public tag: number) {}
@@ -12,7 +12,14 @@ export class ConstantDummyInfo extends CpInfo {
 }
 
 export class ConstantUtf8Info extends CpInfo {
-  constructor(public value: string) { super(1); }
+  public replacement: string;
+  public isPatched: boolean = false;
+
+  constructor(public value: string) {
+    super(1);
+    this.replacement = value;
+  }
+
   write(writer: DataWriter): void {
     writer.writeU1(1);
     writer.writeUTF(this.value);
@@ -104,7 +111,19 @@ export class ConstantNameAndTypeInfo extends CpInfo {
 }
 
 export class AttributeInfo {
-  constructor(public nameIndex: number, public data: Uint8Array) {}
+  public length: number;
+  public data: Uint8Array;
+
+  constructor(public nameIndex: number, lengthOrData: number | Uint8Array, maybeData?: Uint8Array) {
+    if (maybeData instanceof Uint8Array) {
+      this.length = lengthOrData as number;
+      this.data = maybeData;
+    } else {
+      this.data = lengthOrData as Uint8Array;
+      this.length = this.data.length;
+    }
+  }
+
   write(writer: DataWriter): void {
     writer.writeU2(this.nameIndex);
     writer.writeI4(this.data.length);

@@ -2,45 +2,44 @@
 
 import React, { useState } from "react";
 import { Navbar } from "./components/Navbar";
-import { MergeStudio } from "./components/MergeStudio";
+import { ReplicateStudio } from "./components/ReplicateStudio";
 import { SplitStudio } from "./components/SplitStudio";
-import { Shield, Sparkles, Terminal, Code2 } from "lucide-react";
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<"merge" | "split">("merge");
+  const [activeTab, setActiveTab] = useState<"replicate" | "split">("replicate");
 
   return (
-    <div className="min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen flex flex-col justify-between">
       <div>
         {/* Navigation Bar */}
         <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-        {/* Main App Container */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-          {activeTab === "merge" ? <MergeStudio /> : <SplitStudio />}
+        {/* Content Container */}
+        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+          {/* Section Header */}
+          <div className="mb-6">
+            <h1 className="text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+              {activeTab === "replicate" ? "Replicate J2ME Application" : "Split Multi-Game Archive"}
+            </h1>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+              {activeTab === "replicate"
+                ? "Replicate a single JAR into 2 to 26 isolated instances with bytecode isolation, static cloning, and an in-game switcher."
+                : "Deconstruct multi-session or combined JARs back into individual standalone playable archives."}
+            </p>
+          </div>
+
+          {activeTab === "replicate" ? <ReplicateStudio /> : <SplitStudio />}
         </main>
       </div>
 
       {/* Footer */}
-      <footer className="w-full border-t border-slate-200/80 dark:border-slate-800/80 py-8 bg-white/40 dark:bg-slate-950/40 backdrop-blur-sm mt-16 transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex items-center space-x-2">
-            <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
-              100% In-Browser Execution
-            </span>
-            <span>• No files uploaded to any server</span>
+      <footer className="w-full border-t border-neutral-200 dark:border-neutral-900 py-6 mt-16 transition-colors">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-400 dark:text-neutral-500">
+          <div>
+            <span>100% In-Browser Execution • Pure TypeScript JVM Rewriter</span>
           </div>
-
-          <div className="flex items-center space-x-6">
-            <span className="flex items-center space-x-1.5">
-              <Shield className="h-3.5 w-3.5 text-indigo-500" />
-              <span>CLDC 1.1 / MIDP 2.0 Bytecode Standard</span>
-            </span>
-            <span className="flex items-center space-x-1.5">
-              <Code2 className="h-3.5 w-3.5 text-cyan-500" />
-              <span>MTX JarSync Studio</span>
-            </span>
+          <div>
+            <span>MTX JarSync</span>
           </div>
         </div>
       </footer>

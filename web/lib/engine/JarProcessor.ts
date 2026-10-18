@@ -13,9 +13,12 @@ export interface JarMetadata {
   midlet2Class?: string;
   fileSize: number;
   originalFileName: string;
+  manifestProperties: Map<string, string>;
 }
 
-export interface MergeOptions {
+export interface ReplicateOptions {
+  count: number; // e.g. 1 to 26
+  displayNames: string[]; // custom display name per replica
   appName: string;
   displayName: string;
   author: string;
@@ -28,12 +31,17 @@ export interface MergeOptions {
 export interface SplitResult {
   fileName: string;
   blob: Blob;
-  metadata: JarMetadata;
+  metadata: {
+    name: string;
+    vendor: string;
+    version: string;
+    fileSize: number;
+  };
 }
 
 export class JarProcessor {
   /**
-   * Parses a JAR File and returns its extracted metadata (Manifest, App Name, Icon, MIDlet classes).
+   * Inspects a JAR File and extracts metadata, icon, manifest properties, and MIDlet classes.
    */
   public static async inspectJar(file: File): Promise<{ metadata: JarMetadata; zip: JSZip }> {
     const arrayBuffer = await file.arrayBuffer();
@@ -55,7 +63,6 @@ export class JarProcessor {
     let iconFileName = '';
     let iconDataUrl: string | undefined;
 
-    // Parse icon from MIDlet-1: "Name, /icon.png, class"
     if (midlet1) {
       const parts = midlet1.split(',');
       if (parts.length >= 2) {
@@ -71,7 +78,6 @@ export class JarProcessor {
       }
     }
 
-    // Fallback: check /icon.png if not found
     if (!iconDataUrl) {
       const fallbackIcon = zip.file('icon.png') || zip.file('i.png');
       if (fallbackIcon) {
@@ -90,21 +96,25 @@ export class JarProcessor {
         midlet1Class: midlet1 ? midlet1.split(',')[2]?.trim() : undefined,
         midlet2Class: midlet2 ? midlet2.split(',')[2]?.trim() : undefined,
         fileSize: file.size,
-        originalFileName: file.name
+        originalFileName: file.name,
+        manifestProperties: props
       },
       zip
     };
   }
 
   /**
-   * Merges multiple J2ME JARs into an isolated multi-app JAR with an in-game switcher overlay.
+   * Replicates a single J2ME JAR N times (e.g. 2 to 26 accounts/clones)
+   * into a single multi-session JAR with full state and bytecode isolation,
+   * static initializer cloning, and in-game switching overlay.
    */
-  public static async mergeJars(
-    files: File[],
-    options: MergeOptions,
+  public static async replicateJar(
+    file: File,
+    options: ReplicateOptions,
     onProgress?: (progress: number, status: string) => void
   ): Promise<Blob> {
-    const totalSteps = files.length * 3 + 4;
+    const count = Math.min(26, Math.max(1, options.count));
+    const totalSteps = count * 2 + 5;
     let completedSteps = 0;
 
     const report = (status: string) => {
@@ -113,19 +123,21 @@ export class JarProcessor {
       onProgress?.(pct, status);
     };
 
+    report('Inspecting source JAR...');
+    const { metadata, zip } = await JarProcessor.inspectJar(file);
+
     const outZip = new JSZip();
     const patcher = new ClassPatcher();
     const combinedMidletEntries: string[] = [];
-    let currentAppIndex = 0;
 
     // 1. Load runtime overlay archives
-    report('Loading MTX runtime overlay binaries...');
+    report('Loading runtime overlay binaries...');
     const [coreBytes, switcherBytes] = await Promise.all([
       fetch('/runtime/mtx-core.jar').then(r => r.arrayBuffer()),
       fetch(options.featureScreenshot ? '/runtime/mtx-switcher-ss.jar' : '/runtime/mtx-switcher.jar').then(r => r.arrayBuffer())
     ]);
 
-    // Copy runtime classes into root of output JAR
+    // Copy core runtime classes
     const coreZip = await JSZip.loadAsync(coreBytes);
     for (const [relativePath, fileObj] of Object.entries(coreZip.files)) {
       if (!fileObj.dir && relativePath.endsWith('.class')) {
@@ -137,6 +149,7 @@ export class JarProcessor {
       }
     }
 
+    // Copy switcher runtime classes
     const switcherZip = await JSZip.loadAsync(switcherBytes);
     for (const [relativePath, fileObj] of Object.entries(switcherZip.files)) {
       if (!fileObj.dir && relativePath.endsWith('.class')) {
@@ -156,98 +169,91 @@ export class JarProcessor {
     const iconRes = await fetch('/runtime/icon.png').then(r => r.arrayBuffer());
     outZip.file('mtx/mid.png', new Uint8Array(iconRes));
 
-    // 2. Process each input JAR
-    for (let fIdx = 0; fIdx < files.length; fIdx++) {
-      const file = files[fIdx];
-      report(`Analyzing ${file.name}...`);
-      const { metadata, zip } = await JarProcessor.inspectJar(file);
+    // 2. Prepare sub-app identifiers
+    const timestamp = Date.now();
+    const iniName = `${timestamp}.ini`;
+    const pngName = `${timestamp}.png`;
 
-      const timestamp = Date.now() + fIdx;
-      const iniName = `${timestamp}.ini`;
-      const pngName = `${timestamp}.png`;
+    // Save icon under timestamp.png
+    if (metadata.iconFileName && zip.file(metadata.iconFileName)) {
+      const iconData = await zip.file(metadata.iconFileName)!.async('uint8array');
+      outZip.file(pngName, iconData);
+    } else {
+      outZip.file(pngName, new Uint8Array(iconRes));
+    }
 
-      // Copy icon for switcher display
-      if (metadata.iconFileName && zip.file(metadata.iconFileName)) {
-        const iconData = await zip.file(metadata.iconFileName)!.async('uint8array');
-        outZip.file(pngName, iconData);
+    // Write original manifest properties to timestamp.ini
+    let iniContent = '';
+    const manifestFile = zip.file('META-INF/MANIFEST.MF');
+    if (manifestFile) {
+      const mfText = await manifestFile.async('text');
+      iniContent = mfText.replace(/\r?\n/g, '\r\n');
+    }
+    outZip.file(iniName, iniContent);
+
+    // Extract raw class files and resources
+    const classFiles: { path: string; data: Uint8Array }[] = [];
+    const resourceFiles: { path: string; data: Uint8Array }[] = [];
+
+    for (const [path, zipEntry] of Object.entries(zip.files)) {
+      if (zipEntry.dir || path.startsWith('META-INF/')) continue;
+      const data = await zipEntry.async('uint8array');
+      if (path.endsWith('.class')) {
+        classFiles.push({ path, data });
       } else {
-        outZip.file(pngName, new Uint8Array(iconRes));
+        resourceFiles.push({ path, data });
       }
+    }
 
-      // Record manifest properties to .ini
-      let iniContent = '';
-      const manifestFile = zip.file('META-INF/MANIFEST.MF');
-      if (manifestFile) {
-        const mfText = await manifestFile.async('text');
-        iniContent = mfText.replace(/\r?\n/g, '\r\n');
-      }
-      outZip.file(iniName, iniContent);
+    const midlet1Target = metadata.midlet1Class || 'Main';
 
-      // Collect classes and resources
-      const classFiles: { path: string; file: JSZip.JSZipObject }[] = [];
-      const resourceFiles: { path: string; file: JSZip.JSZipObject }[] = [];
+    // 3. Replicate the class files across instances
+    for (let i = 0; i < count; i++) {
+      const prefix = i === 0 ? '' : `${String.fromCharCode(97 + i)}/`;
+      const prefixChar = i === 0 ? 'a' : String.fromCharCode(97 + i);
+      const titleName = options.displayNames[i] || `${metadata.name} ${i + 1}`;
+      const qualifiedClass = i === 0 ? midlet1Target : `${String.fromCharCode(97 + i)}.${midlet1Target}`;
 
-      zip.forEach((path, zipEntry) => {
-        if (zipEntry.dir || path.startsWith('META-INF/')) return;
-        if (path.endsWith('.class')) {
-          classFiles.push({ path, file: zipEntry });
-        } else {
-          resourceFiles.push({ path, file: zipEntry });
-        }
-      });
+      combinedMidletEntries.push(`${titleName},/${pngName},${qualifiedClass},/${iniName}`);
 
-      // Compute prefix for this sub-game
-      const prefix = currentAppIndex === 0 ? '' : `${String.fromCharCode(97 + currentAppIndex)}/`;
-      const prefixChar = currentAppIndex === 0 ? 'a' : String.fromCharCode(97 + currentAppIndex);
-      const subAppName = `${metadata.name} ${currentAppIndex + 1}`;
+      report(`Synthesizing clone #${i + 1} (prefix: '${prefix || "root"}')...`);
 
-      // Update Combined Master Manifest Table:
-      // index: Title,/icon,prefix.Class,/timestamp.ini
-      const targetMainClass = metadata.midlet1Class || 'Main';
-      const qualifiedMainClass = currentAppIndex === 0 ? targetMainClass : `${String.fromCharCode(97 + currentAppIndex)}.${targetMainClass}`;
-      combinedMidletEntries.push(`${subAppName},/${pngName},${qualifiedMainClass},/${iniName}`);
-
-      // Setup Class Replacements mapping
-      report(`Rewriting bytecode for ${file.name}...`);
+      // Initialize class replacements mapping for this clone
       const replacements = ClassPatcher.initClassReplacements();
       for (const cf of classFiles) {
         const cNameNoExt = cf.path.substring(0, cf.path.length - 6);
         replacements.set(cNameNoExt, prefix + cNameNoExt);
       }
 
-      // Patch classes
+      // Patch and write each class
       for (const cf of classFiles) {
-        const rawBytes = await cf.file.async('uint8array');
-        const patchedBytes = JarProcessor.patchClassBytes(patcher, rawBytes, prefixChar);
+        const patchedBytes = JarProcessor.patchClassBytes(patcher, cf.data, prefixChar);
         outZip.file(prefix + cf.path, patchedBytes);
       }
 
-      // Generate synthetic Static.class for this sub-app
+      // Generate Static.class for this clone
       const staticClassName = prefix.length > 0 ? `${prefixChar}/Static` : 'Static';
       const staticClassBytes = ClassBuilder.buildClass(ClassPatcher.patchedClasses, staticClassName);
       if (staticClassBytes) {
         outZip.file(`${staticClassName}.class`, staticClassBytes);
       }
-
-      // Copy resources unchanged
-      report(`Packing resources for ${file.name}...`);
-      for (const rf of resourceFiles) {
-        const resBytes = await rf.file.async('uint8array');
-        outZip.file(rf.path, resBytes);
-      }
-
-      currentAppIndex++;
     }
 
-    // 3. Generate Master Manifest META-INF/MANIFEST.MF
-    report('Generating unified J2ME manifest...');
+    // 4. Copy shared resources once to root
+    report('Packaging static game resources...');
+    for (const rf of resourceFiles) {
+      outZip.file(rf.path, rf.data);
+    }
+
+    // 5. Generate Master Manifest
+    report('Writing master manifest...');
     let mf = 'Manifest-Version: 1.0\r\n';
     mf += 'MicroEdition-Configuration: CLDC-1.1\r\n';
     mf += 'MicroEdition-Profile: MIDP-2.0\r\n';
     mf += 'MIDlet-Version: 2.5\r\n';
-    mf += `MIDlet-Vendor: ${options.author || 'MTX JarSync'}\r\n`;
-    mf += `MIDlet-Name: ${options.appName || 'MTX Combined'}\r\n`;
-    mf += `MIDlet-1: ${options.displayName || options.appName || 'MTX Multi'},/mtx/mid.png,mtx.jarsync.runtime.MtxSwitcher\r\n`;
+    mf += `MIDlet-Vendor: ${options.author || metadata.vendor || 'MTX'}\r\n`;
+    mf += `MIDlet-Name: ${options.appName || `${metadata.name} Multi`}\r\n`;
+    mf += `MIDlet-1: ${options.displayName || options.appName || `${metadata.name} Multi`},/mtx/mid.png,mtx.jarsync.runtime.MtxSwitcher\r\n`;
     if (options.featureNoExit) {
       mf += 'Nokia-MIDlet-no-exit: true\r\n';
     }
@@ -258,25 +264,25 @@ export class JarProcessor {
 
     outZip.file('META-INF/MANIFEST.MF', mf);
 
-    report('Compressing final JAR package...');
+    report('Compressing final JAR...');
     const resultBlob = await outZip.generateAsync({
       type: 'blob',
       compression: 'DEFLATE',
       compressionOptions: { level: 9 }
     });
 
-    onProgress?.(100, 'Done');
+    onProgress?.(100, 'Replication Complete');
     return resultBlob;
   }
 
   /**
-   * Splits a multi-app JAR back into individual standalone playable JARs.
+   * Splits a multi-session replicated JAR back into standalone single-app JARs.
    */
   public static async splitJar(
     file: File,
     onProgress?: (progress: number, status: string) => void
   ): Promise<SplitResult[]> {
-    onProgress?.(10, 'Analyzing combined JAR structure...');
+    onProgress?.(10, 'Reading archive manifest...');
     const arrayBuffer = await file.arrayBuffer();
     const zip = await JSZip.loadAsync(arrayBuffer);
 
@@ -306,7 +312,7 @@ export class JarProcessor {
     }
 
     if (subAppEntries.length === 0) {
-      throw new Error('This JAR does not appear to be an MTX/Multi-MIDlet combined JAR (no numbered index entries found).');
+      throw new Error('No replicated sub-app entries found in this JAR. Make sure this is a multi-MIDlet archive.');
     }
 
     const results: SplitResult[] = [];
@@ -318,19 +324,15 @@ export class JarProcessor {
       onProgress?.(curPct, `Extracting ${entry.title}...`);
 
       const singleZip = new JSZip();
-
-      // Determine package prefix for this sub-app
       const prefix = idx === 0 ? '' : `${String.fromCharCode(97 + idx)}/`;
       const dotPrefix = idx === 0 ? '' : `${String.fromCharCode(97 + idx)}.`;
 
-      // Read original manifest properties from its .ini file
       let standaloneManifest = '';
       const iniFileObj = zip.file(entry.iniFile);
       if (iniFileObj) {
         standaloneManifest = await iniFileObj.async('text');
       }
 
-      // If .ini didn't have full manifest, generate standard J2ME manifest
       if (!standaloneManifest || !standaloneManifest.includes('MIDlet-1:')) {
         const cleanClass = entry.className.startsWith(dotPrefix)
           ? entry.className.substring(dotPrefix.length)
@@ -350,38 +352,31 @@ export class JarProcessor {
 
       singleZip.file('META-INF/MANIFEST.MF', standaloneManifest);
 
-      // Copy icon
-      const iconObj = zip.file(entry.icon);
+      // Extract icon
+      const iconObj = zip.file(entry.icon) || zip.file('icon.png');
       if (iconObj) {
         const iconData = await iconObj.async('uint8array');
         singleZip.file('icon.png', iconData);
       }
 
-      // Extract and un-prefix classes
+      // Copy classes (stripping clone prefix) and resources
       zip.forEach((path, fileObj) => {
         if (fileObj.dir || path.startsWith('META-INF/')) return;
-
-        // Skip runtime overlays
         if (path.startsWith('lib/') || path.startsWith('mtx/') || path.startsWith('MrQuyet/')) return;
         if (path.endsWith('.ini')) return;
 
         if (idx === 0) {
-          // App 0: classes at root level that aren't prefixed with single-letter dirs b/, c/, etc.
           const isOtherPrefixed = /^[b-z]\//.test(path);
-          if (!isOtherPrefixed) {
-            if (path !== 'Static.class') {
-              singleZip.file(path, fileObj.async('uint8array'));
-            }
+          if (!isOtherPrefixed && path !== 'Static.class') {
+            singleZip.file(path, fileObj.async('uint8array'));
           }
         } else {
-          // App idx: classes start with `${prefix}`
           if (path.startsWith(prefix)) {
             const unPrefixed = path.substring(prefix.length);
             if (unPrefixed !== 'Static.class') {
               singleZip.file(unPrefixed, fileObj.async('uint8array'));
             }
           } else if (!path.endsWith('.class') && !/^[b-z]\//.test(path)) {
-            // Also include shared resources
             singleZip.file(path, fileObj.async('uint8array'));
           }
         }
@@ -401,8 +396,7 @@ export class JarProcessor {
           name: entry.title,
           vendor: 'Extracted',
           version: '1.0.0',
-          fileSize: singleBlob.size,
-          originalFileName: cleanFileName
+          fileSize: singleBlob.size
         }
       });
     }
@@ -420,8 +414,7 @@ export class JarProcessor {
     patcher.patchClass(reader, midletChar);
 
     const writer = new DataWriter();
-    patcher.writeClass(writer);
-    return writer.toByteArray();
+    return patcher.writeClass(writer);
   }
 
   private static patchSwitcherClassListRef(bytes: Uint8Array): Uint8Array {
@@ -438,11 +431,11 @@ export class JarProcessor {
         }
       }
       if (match) {
-        buf[i] = 108; // 'l'
-        buf[i + 1] = 105; // 'i'
-        buf[i + 2] = 98; // 'b'
+        buf[i] = 108;
+        buf[i + 1] = 105;
+        buf[i + 2] = 98;
         let p = i - 1;
-        while (buf[p] !== 1 && p > 0) { // find CONSTANT_Utf8 tag
+        while (buf[p] !== 1 && p > 0) {
           p--;
         }
         if (buf[p] === 1) {

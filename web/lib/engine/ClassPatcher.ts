@@ -109,7 +109,7 @@ export class ClassPatcher {
     }
 
     this.accessFlags = reader.readU2();
-    this.accessFlags = (this.accessFlags | 1) & ~6; // ACC_PUBLIC, remove ACC_FINAL
+    this.accessFlags = (this.accessFlags | 1) & ~6; // ensure ACC_PUBLIC, clear ACC_FINAL/ACC_SUPER constraints
     this.thisClassIndex = reader.readU2();
     this.superClassIndex = reader.readU2();
 
@@ -119,267 +119,415 @@ export class ClassPatcher {
     this.currentPatchedClassName = rep ? rep : thisClassUtf8.value;
   }
 
-  public patchClass(reader: DataReader, midletChar: string): Uint8Array {
+  public patchClass(reader: DataReader, midletChar: string) {
     this.hasStaticFields = false;
     this.hasClinit = false;
     this.methods = [];
 
-    // Interfaces
+    const cp = this.constantPool;
+    const cpSize = cp.length;
+
+    // 1. Patch ConstantClass and ConstantMethodref entries
+    for (let i = 1; i < cpSize; i++) {
+      const entry = cp[i];
+      if (entry instanceof ConstantClassInfo) {
+        const utf = cp[entry.nameIndex] as ConstantUtf8Info;
+        if (!utf.isPatched) {
+          utf.isPatched = true;
+          const name = utf.value;
+          if (ClassPatcher.classReplacements.has(name)) {
+            utf.value = ClassPatcher.classReplacements.get(name)!;
+          } else if (name.startsWith('[')) {
+            const lIdx = name.indexOf('L') + 1;
+            if (lIdx > 0) {
+              const rep = ClassPatcher.classReplacements.get(name.substring(lIdx, name.length - 1));
+              if (rep) {
+                utf.value = name.substring(0, lIdx) + rep + ';';
+              }
+            }
+          }
+        }
+      } else if (entry instanceof ConstantMethodrefInfo) {
+        const nat = cp[entry.nameAndTypeIndex] as ConstantNameAndTypeInfo;
+        const methodName = (cp[nat.nameIndex] as ConstantUtf8Info).value;
+        const targetClass = (cp[(cp[entry.classIndex] as ConstantClassInfo).nameIndex] as ConstantUtf8Info).value;
+
+        if (targetClass === 'java/lang/Class' && methodName === 'forName' && midletChar !== 'a') {
+          entry.classIndex = this.getOrCreateClassRef('lib/Class');
+          const nameUtf = cp[nat.nameIndex] as ConstantUtf8Info;
+          nameUtf.isPatched = true;
+          nameUtf.replacement = 'forName'.replace('f', midletChar);
+        } else if (targetClass === 'javax/microedition/rms/RecordStore') {
+          const suffix = methodName.substring(1);
+          if (suffix === 'penRecordStore' || suffix === 'istRecordStores' || suffix === 'eleteRecordStore') {
+            entry.classIndex = this.getOrCreateClassRef('lib/RecordStore');
+            (cp[nat.nameIndex] as ConstantUtf8Info).value = midletChar + suffix;
+          }
+        } else if (methodName === 'paint' && targetClass !== 'javax/microedition/lcdui/game/Sprite') {
+          const nameUtf = cp[nat.nameIndex] as ConstantUtf8Info;
+          nameUtf.isPatched = true;
+          nameUtf.replacement = 'PAINT';
+        } else {
+          this.patchMethodDescriptor(cp[nat.descriptorIndex] as ConstantUtf8Info);
+        }
+      } else if (entry instanceof ConstantInterfaceMethodrefInfo) {
+        const nat = cp[entry.nameAndTypeIndex] as ConstantNameAndTypeInfo;
+        this.patchMethodDescriptor(cp[nat.descriptorIndex] as ConstantUtf8Info);
+      } else if (entry instanceof ConstantFieldrefInfo) {
+        const nat = cp[entry.nameAndTypeIndex] as ConstantNameAndTypeInfo;
+        this.patchFieldDescriptor(cp[nat.descriptorIndex] as ConstantUtf8Info);
+      }
+    }
+
+    // 2. Patch NameAndType and String references
+    for (let i = 1; i < cpSize; i++) {
+      const entry = cp[i];
+      if (entry instanceof ConstantNameAndTypeInfo) {
+        const nameUtf = cp[entry.nameIndex] as ConstantUtf8Info;
+        const name = nameUtf.value;
+        if (name === 'keyReleased' || name === 'keyPressed') {
+          nameUtf.replacement = name.replace('k', 'l');
+          nameUtf.isPatched = true;
+        }
+        if (nameUtf.isPatched && nameUtf.replacement !== name) {
+          entry.nameIndex = this.getUtf8ReplacementIndex(nameUtf);
+        }
+        const descUtf = cp[entry.descriptorIndex] as ConstantUtf8Info;
+        if (descUtf.isPatched && descUtf.value.indexOf('/') === 1) {
+          entry.descriptorIndex = this.getUtf8ReplacementIndex(descUtf);
+        }
+      } else if (entry instanceof ConstantStringInfo) {
+        const strUtf = cp[entry.stringIndex] as ConstantUtf8Info;
+        if (strUtf.isPatched && strUtf.replacement !== strUtf.value) {
+          entry.stringIndex = this.getUtf8ReplacementIndex(strUtf);
+        }
+      }
+    }
+
+    // 3. Read interfaces
     const ifaceCount = reader.readU2();
     this.interfaces = [];
     for (let i = 0; i < ifaceCount; i++) {
       this.interfaces.push(reader.readU2());
     }
 
-    // Fields
+    // 4. Read and patch fields
     const fieldCount = reader.readU2();
     this.fields = [];
+    const fieldsToClear: IntPair[] = [];
+
     for (let i = 0; i < fieldCount; i++) {
-      const f = new FieldInfo(reader.readU2(), reader.readU2(), reader.readU2());
-      const fAttrCount = reader.readU2();
-      for (let a = 0; a < fAttrCount; a++) {
-        const nameIdx = reader.readU2();
-        const len = reader.readI4();
-        f.attributes.push(new AttributeInfo(nameIdx, reader.readBytes(len)));
+      const fAccess = reader.readU2();
+      let fNameIdx = reader.readU2();
+      let fDescIdx = reader.readU2();
+
+      const nameUtf = cp[fNameIdx] as ConstantUtf8Info;
+      if (nameUtf.isPatched && nameUtf.replacement !== nameUtf.value) {
+        fNameIdx = this.getUtf8ReplacementIndex(nameUtf);
+      }
+      const descUtf = cp[fDescIdx] as ConstantUtf8Info;
+      if (descUtf.isPatched && descUtf.value.indexOf('/') === 1) {
+        fDescIdx = this.getUtf8ReplacementIndex(descUtf);
+      }
+      this.patchFieldDescriptor(cp[fDescIdx] as ConstantUtf8Info);
+
+      const fAttrs = this.readAttributes(reader);
+      // Non-constant static field in a concrete class
+      if (fAttrs.length === 0 && (fAccess & 8) !== 0 && (this.accessFlags & 512) === 0) {
+        this.hasStaticFields = true;
+        fieldsToClear.push({ a: fNameIdx, b: fDescIdx });
       }
 
-      if ((f.accessFlags & 8) !== 0) { // ACC_STATIC
-        f.accessFlags &= ~16; // remove ACC_FINAL
-        f.accessFlags |= 1;   // ensure ACC_PUBLIC
-        this.hasStaticFields = true;
-      }
+      const f = new FieldInfo(fAccess, fNameIdx, fDescIdx);
+      f.attributes = fAttrs;
       this.fields.push(f);
     }
 
-    // Methods
+    // 5. Read and patch methods
     const methodCount = reader.readU2();
     for (let i = 0; i < methodCount; i++) {
-      const m = new MethodInfo(reader.readU2(), reader.readU2(), reader.readU2());
-      const mAttrCount = reader.readU2();
-      for (let a = 0; a < mAttrCount; a++) {
-        const nameIdx = reader.readU2();
-        const len = reader.readI4();
-        m.attributes.push(new AttributeInfo(nameIdx, reader.readBytes(len)));
+      const mAccess = reader.readU2();
+      let mNameIdx = reader.readU2();
+      const mDescIdx = reader.readU2();
+
+      let nameUtf = cp[mNameIdx] as ConstantUtf8Info;
+      const mName = nameUtf.value;
+      if (mName === 'keyReleased' || mName === 'keyPressed') {
+        nameUtf.replacement = mName.replace('k', 'l');
+        nameUtf.isPatched = true;
+      } else if (mName === 'paint') {
+        mNameIdx = this.addUtf8('PAINT');
+        nameUtf = cp[mNameIdx] as ConstantUtf8Info;
       }
 
-      const mNameUtf8 = this.constantPool[m.nameIndex] as ConstantUtf8Info;
-      const mName = mNameUtf8 ? mNameUtf8.value : '';
-
-      // Intercept paint and key events in Canvas
-      if (mName === 'paint' || mName === 'keyPressed' || mName === 'keyReleased') {
-        const mDescUtf8 = this.constantPool[m.descriptorIndex] as ConstantUtf8Info;
-        const mDesc = mDescUtf8 ? mDescUtf8.value : '';
-        if (mName === 'paint' && mDesc === '(Ljavax/microedition/lcdui/Graphics;)V') {
-          m.nameIndex = this.getOrCreateUtf8('PAINT');
-        } else if (mName === 'keyPressed' && mDesc === '(I)V') {
-          m.nameIndex = this.getOrCreateUtf8('leyPressed');
-        } else if (mName === 'keyReleased' && mDesc === '(I)V') {
-          m.nameIndex = this.getOrCreateUtf8('leyReleased');
-        }
+      if (nameUtf.isPatched && nameUtf.replacement !== mName) {
+        mNameIdx = this.getUtf8ReplacementIndex(nameUtf);
       }
+      this.patchMethodDescriptor(cp[mDescIdx] as ConstantUtf8Info);
 
-      if (mName === '<clinit>') {
+      const mi = new MethodInfo(mAccess, mNameIdx, mDescIdx);
+      mi.attributes = this.readAttributes(reader);
+      this.methods.push(mi);
+
+      // Clone <clinit> into cinitclone for multi-midlet isolation
+      if (nameUtf.replacement === '<clinit>' && (this.accessFlags & 512) === 0) {
+        mi.nameIndex = this.getOrCreateUtf8('cinitclone');
+        mi.accessFlags = 9; // ACC_PUBLIC | ACC_STATIC
         this.hasClinit = true;
-        // Clone original <clinit> to cinitclone
-        m.nameIndex = this.getOrCreateUtf8('cinitclone');
-        m.accessFlags = 9; // ACC_PUBLIC | ACC_STATIC
+
+        const newClinit = new MethodInfo(mAccess, mNameIdx, mDescIdx);
+        newClinit.attributes = this.createClinitPatchCode(midletChar);
+        this.methods.push(newClinit);
       }
-
-      this.methods.push(m);
     }
 
-    if (this.hasStaticFields) {
-      ClassPatcher.patchedClasses.push(this.currentPatchedClassName);
-      this.synthesizeClearsMethod();
+    this.attributes = this.readAttributes(reader);
 
-      if (!this.hasClinit) {
-        // Synthesize empty cinitclone
-        const emptyClone = new MethodInfo(9, this.getOrCreateUtf8('cinitclone'), this.getOrCreateUtf8('()V'));
-        const codeWriter = new DataWriter(32);
-        codeWriter.writeU2(0); // max_stack
-        codeWriter.writeU2(0); // max_locals
-        codeWriter.writeI4(1); // code_length
-        codeWriter.writeU1(177); // return
-        codeWriter.writeU2(0); // exception_table_length
-        codeWriter.writeU2(0); // attributes_count
-        emptyClone.attributes.push(new AttributeInfo(this.getOrCreateUtf8('Code'), codeWriter.toByteArray()));
-        this.methods.push(emptyClone);
+    // 6. Synthesize empty cinitclone and <clinit> if class has static fields but no original <clinit>
+    if (this.hasStaticFields && !this.hasClinit) {
+      this.hasClinit = true;
+
+      const emptyClone = new MethodInfo(9, this.getOrCreateUtf8('cinitclone'), this.getOrCreateUtf8('()V'));
+      const codeW = new DataWriter(16);
+      codeW.writeU2(0); // max_stack
+      codeW.writeU2(1); // max_locals
+      codeW.writeI4(1); // code_length
+      codeW.writeU1(177); // return
+      codeW.writeI4(0); // exception_table_length(2) + attributes_count(2)
+      emptyClone.attributes = [new AttributeInfo(this.getOrCreateUtf8('Code'), 1, codeW.toByteArray())];
+      this.methods.push(emptyClone);
+
+      const newClinit = new MethodInfo(9, this.getOrCreateUtf8('<clinit>'), this.getOrCreateUtf8('()V'));
+      newClinit.attributes = this.createClinitPatchCode(midletChar);
+      this.methods.push(newClinit);
+    }
+
+    // 7. Synthesize clears() method to reset static fields to default values
+    if (this.hasStaticFields || this.hasClinit) {
+      const clearsMethod = new MethodInfo(9, this.getOrCreateUtf8('clears'), this.getOrCreateUtf8('()V'));
+      clearsMethod.attributes = this.createClearsPatchCode(fieldsToClear);
+      this.methods.push(clearsMethod);
+
+      ClassPatcher.midletClassCounter++;
+      if (this.currentPatchedClassName) {
+        ClassPatcher.patchedClasses.push(this.currentPatchedClassName);
       }
-
-      this.synthesizeClinitMethod(midletChar);
     }
-
-    // Attributes
-    const attrCount = reader.readU2();
-    this.attributes = [];
-    for (let i = 0; i < attrCount; i++) {
-      const nameIdx = reader.readU2();
-      const len = reader.readI4();
-      this.attributes.push(new AttributeInfo(nameIdx, reader.readBytes(len)));
-    }
-
-    this.applyClassReplacements();
-    return this.writeClass();
   }
 
-  private synthesizeClearsMethod() {
-    const mi = new MethodInfo(9, this.getOrCreateUtf8('clears'), this.getOrCreateUtf8('()V'));
-    const w = new DataWriter(128);
+  private createClinitPatchCode(midletChar: string): AttributeInfo[] {
+    const w = new DataWriter(32);
     w.writeU2(1); // max_stack
     w.writeU2(0); // max_locals
+    w.writeI4(ClassPatcher.midletClassCounter < 6 ? 8 : 10); // code_length
 
-    let codeLen = 1;
-    for (const f of this.fields) {
-      if ((f.accessFlags & 8) !== 0) { // ACC_STATIC
-        const descUtf8 = this.constantPool[f.descriptorIndex] as ConstantUtf8Info;
-        const d = descUtf8.value;
-        if (d === 'D' || d === 'J') codeLen += 4;
-        else if (d === 'F' || d === 'I' || d === 'C' || d === 'S' || d === 'Z' || d === 'B' || d.startsWith('L') || d.startsWith('[')) codeLen += 4;
-      }
+    if (ClassPatcher.midletClassCounter < 6) {
+      w.writeU1(3 + ClassPatcher.midletClassCounter); // iconst_0..iconst_5
+    } else {
+      w.writeU1(17); // sipush
+      w.writeU2(ClassPatcher.midletClassCounter);
     }
 
-    w.writeI4(codeLen);
-    for (const f of this.fields) {
-      if ((f.accessFlags & 8) !== 0) {
-        const descUtf8 = this.constantPool[f.descriptorIndex] as ConstantUtf8Info;
-        const nameUtf8 = this.constantPool[f.nameIndex] as ConstantUtf8Info;
-        const d = descUtf8.value;
-        const fieldRef = this.createFieldRef(this.thisClassIndex, nameUtf8.value, d);
+    w.writeU1(184); // invokestatic
+    const staticClass = (midletChar === 'a') ? 'Static' : `${midletChar}/Static`;
+    w.writeU2(this.createMethodRef(this.getOrCreateClassRef(staticClass), 'regClass', '(I)V'));
 
-        if (d === 'D') {
-          w.writeU1(14); // dconst_0
-          w.writeU1(179); // putstatic
-          w.writeU2(fieldRef);
-        } else if (d === 'J') {
-          w.writeU1(9); // lconst_0
-          w.writeU1(179); // putstatic
-          w.writeU2(fieldRef);
-        } else if (d === 'F') {
-          w.writeU1(11); // fconst_0
-          w.writeU1(179); // putstatic
-          w.writeU2(fieldRef);
-        } else if (d === 'I' || d === 'C' || d === 'S' || d === 'Z' || d === 'B') {
-          w.writeU1(3); // iconst_0
-          w.writeU1(179); // putstatic
-          w.writeU2(fieldRef);
-        } else if (d.startsWith('L') || d.startsWith('[')) {
-          w.writeU1(1); // aconst_null
-          w.writeU1(179); // putstatic
-          w.writeU2(fieldRef);
-        }
-      }
-    }
+    w.writeU1(184); // invokestatic
+    w.writeU2(this.createMethodRef(this.thisClassIndex, 'cinitclone', '()V'));
     w.writeU1(177); // return
-    w.writeU2(0);   // exception_table_length
-    w.writeU2(0);   // attributes_count
-    mi.attributes.push(new AttributeInfo(this.getOrCreateUtf8('Code'), w.toByteArray()));
-    this.methods.push(mi);
+    w.writeI4(0); // exception_table_length(2) + attributes_count(2)
+
+    const code = w.toByteArray();
+    return [new AttributeInfo(this.getOrCreateUtf8('Code'), code.length, code)];
   }
 
-  private synthesizeClinitMethod(midletChar: string) {
-    const mi = new MethodInfo(9, this.getOrCreateUtf8('<clinit>'), this.getOrCreateUtf8('()V'));
-    const w = new DataWriter(128);
+  private createClearsPatchCode(fieldPairs: IntPair[]): AttributeInfo[] {
+    const total = fieldPairs.length;
+    const w = new DataWriter(total * 4 + 32);
     w.writeU2(2); // max_stack
     w.writeU2(0); // max_locals
+    const codeLen = (total << 2) + 1;
+    w.writeI4(codeLen);
 
-    const staticClassName = (midletChar === 'a') ? 'Static' : (midletChar + '/Static');
-    const staticClassIdx = this.getOrCreateClass(staticClassName);
-    const vectorFieldRef = this.createFieldRef(staticClassIdx, 'staticvector', 'Ljava/util/Vector;');
-    const vectorClassIdx = this.getOrCreateClass('java/util/Vector');
-    const addElementMethodRef = this.createMethodRef(vectorClassIdx, 'addElement', '(Ljava/lang/Object;)V');
-    const cinitCloneMethodRef = this.createMethodRef(this.thisClassIndex, 'cinitclone', '()V');
+    const cp = this.constantPool;
+    const cpSize = cp.length;
 
-    // Code:
-    // getstatic Static.staticvector
-    // bipush classIndex
-    // invokestatic Integer.valueOf / constructor
-    // invokevirtual Vector.addElement
-    // invokestatic thisClass.cinitclone
-    // return
-    w.writeI4(17); // code length
-    w.writeU1(178); // getstatic
-    w.writeU2(vectorFieldRef);
-    w.writeU1(16); // bipush
-    w.writeU1(ClassPatcher.patchedClasses.length - 1);
-    const intClassIdx = this.getOrCreateClass('java/lang/Integer');
-    const intInitRef = this.createMethodRef(intClassIdx, '<init>', '(I)V');
-    w.writeU1(187); // new Integer
-    w.writeU2(intClassIdx);
-    w.writeU1(89);  // dup_x1
-    w.writeU1(95);  // swap
-    w.writeU1(183); // invokespecial Integer.<init>(I)V
-    w.writeU2(intInitRef);
-    w.writeU1(182); // invokevirtual Vector.addElement(Object)V
-    w.writeU2(addElementMethodRef);
-    w.writeU1(184); // invokestatic cinitclone()V
-    w.writeU2(cinitCloneMethodRef);
-    w.writeU1(177); // return
-    w.writeU2(0);   // exception table
-    w.writeU2(0);   // attributes
-    mi.attributes.push(new AttributeInfo(this.getOrCreateUtf8('Code'), w.toByteArray()));
-    this.methods.push(mi);
-  }
+    for (let i = 0; i < total; i++) {
+      const pair = fieldPairs[i];
+      let fieldRefIdx = -1;
 
-  private applyClassReplacements() {
-    for (const cp of this.constantPool) {
-      if (cp.tag === 7) { // CONSTANT_Class
-        const cls = cp as ConstantClassInfo;
-        const utf = this.constantPool[cls.nameIndex] as ConstantUtf8Info;
-        if (utf && ClassPatcher.classReplacements.has(utf.value)) {
-          cls.nameIndex = this.getOrCreateUtf8(ClassPatcher.classReplacements.get(utf.value)!);
+      for (let j = 0; j < cpSize; j++) {
+        const obj = cp[j];
+        if (obj instanceof ConstantFieldrefInfo && obj.classIndex === this.thisClassIndex) {
+          const nat = cp[obj.nameAndTypeIndex] as ConstantNameAndTypeInfo;
+          if (nat.nameIndex === pair.a && nat.descriptorIndex === pair.b) {
+            fieldRefIdx = j;
+            break;
+          }
         }
       }
+
+      if (fieldRefIdx < 0) {
+        let natIdx = -1;
+        for (let j = 0; j < cpSize; j++) {
+          const obj = cp[j];
+          if (obj instanceof ConstantNameAndTypeInfo && obj.nameIndex === pair.a && obj.descriptorIndex === pair.b) {
+            natIdx = j;
+            break;
+          }
+        }
+        if (natIdx < 0) {
+          cp.push(new ConstantNameAndTypeInfo(pair.a, pair.b));
+          natIdx = cp.length - 1;
+        }
+        cp.push(new ConstantFieldrefInfo(this.thisClassIndex, natIdx));
+        fieldRefIdx = cp.length - 1;
+      }
+
+      const descUtf = cp[pair.b] as ConstantUtf8Info;
+      let pushOpcode: number;
+      switch (descUtf.value.charAt(0)) {
+        case 'L':
+        case '[':
+          pushOpcode = 1; // aconst_null
+          break;
+        case 'J':
+          pushOpcode = 9; // lconst_0
+          break;
+        case 'F':
+          pushOpcode = 11; // fconst_0
+          break;
+        case 'D':
+          pushOpcode = 14; // dconst_0
+          break;
+        default:
+          pushOpcode = 3; // iconst_0
+          break;
+      }
+
+      w.writeU1(pushOpcode);
+      w.writeU1(179); // putstatic
+      w.writeU2(fieldRefIdx);
     }
+
+    w.writeU1(177); // return
+    w.writeI4(0); // exception_table_length(2) + attributes_count(2)
+
+    const code = w.toByteArray();
+    return [new AttributeInfo(this.getOrCreateUtf8('Code'), code.length, code)];
+  }
+
+  private getOrCreateClassRef(className: string): number {
+    if (this.classIndexMap.has(className)) {
+      return this.classIndexMap.get(className)!;
+    }
+    this.constantPool.push(new ConstantClassInfo(this.getOrCreateUtf8(className)));
+    const idx = this.constantPool.length - 1;
+    this.classIndexMap.set(className, idx);
+    return idx;
+  }
+
+  private getUtf8ReplacementIndex(utf8: ConstantUtf8Info): number {
+    return this.getOrCreateUtf8(utf8.replacement);
+  }
+
+  private createMethodRef(classIdx: number, name: string, desc: string): number {
+    this.constantPool.push(new ConstantNameAndTypeInfo(this.getOrCreateUtf8(name), this.getOrCreateUtf8(desc)));
+    this.constantPool.push(new ConstantMethodrefInfo(classIdx, this.constantPool.length - 1));
+    return this.constantPool.length - 1;
   }
 
   public getOrCreateUtf8(str: string): number {
     if (this.utf8IndexMap.has(str)) {
-      return this.utf8IndexMap.get(str)!;
+      const idx = this.utf8IndexMap.get(str)!;
+      const utf = this.constantPool[idx] as ConstantUtf8Info;
+      if (utf.isPatched && utf.value !== str) {
+        this.utf8IndexMap.set(utf.value, idx);
+        const newIdx = this.addUtf8(str);
+        this.utf8IndexMap.set(str, newIdx);
+        return newIdx;
+      }
+      return idx;
     }
+    return this.addUtf8(str);
+  }
+
+  private addUtf8(str: string): number {
     const idx = this.constantPool.length;
     this.constantPool.push(new ConstantUtf8Info(str));
     this.utf8IndexMap.set(str, idx);
     return idx;
   }
 
-  public getOrCreateClass(className: string): number {
-    if (this.classIndexMap.has(className)) {
-      return this.classIndexMap.get(className)!;
+  private patchFieldDescriptor(utf: ConstantUtf8Info) {
+    if (!utf.isPatched) {
+      utf.isPatched = true;
+      let desc = utf.value;
+      if (desc.startsWith('[') || desc.startsWith('L')) {
+        const lIdx = desc.indexOf('L') + 1;
+        if (lIdx > 0) {
+          const rep = ClassPatcher.classReplacements.get(desc.substring(lIdx, desc.length - 1));
+          if (rep) {
+            utf.value = desc.substring(0, lIdx) + rep + ';';
+          }
+        }
+      }
     }
-    const nameIdx = this.getOrCreateUtf8(className);
-    const idx = this.constantPool.length;
-    this.constantPool.push(new ConstantClassInfo(nameIdx));
-    this.classIndexMap.set(className, idx);
-    return idx;
   }
 
-  public createFieldRef(classIdx: number, name: string, desc: string): number {
-    const nameIdx = this.getOrCreateUtf8(name);
-    const descIdx = this.getOrCreateUtf8(desc);
-    const natIdx = this.constantPool.length;
-    this.constantPool.push(new ConstantNameAndTypeInfo(nameIdx, descIdx));
-    const fRefIdx = this.constantPool.length;
-    this.constantPool.push(new ConstantFieldrefInfo(classIdx, natIdx));
-    return fRefIdx;
+  private patchMethodDescriptor(utf: ConstantUtf8Info) {
+    if (!utf.isPatched) {
+      utf.isPatched = true;
+      let desc = utf.value;
+      if (!desc.startsWith('(') || desc.indexOf(';') < 0) {
+        return;
+      }
+
+      let res = '';
+      let lIdx: number;
+      while ((lIdx = desc.indexOf('L') + 1) > 0) {
+        res += desc.substring(0, lIdx);
+        desc = desc.substring(lIdx);
+        const semi = desc.indexOf(';') + 1;
+        if (semi <= 0) break;
+        const className = desc.substring(0, semi - 1);
+        const rep = ClassPatcher.classReplacements.get(className);
+        if (rep) {
+          res += rep + ';';
+        } else {
+          res += desc.substring(0, semi);
+        }
+        desc = desc.substring(semi);
+      }
+      res += desc;
+      utf.value = res;
+    }
   }
 
-  public createMethodRef(classIdx: number, name: string, desc: string): number {
-    const nameIdx = this.getOrCreateUtf8(name);
-    const descIdx = this.getOrCreateUtf8(desc);
-    const natIdx = this.constantPool.length;
-    this.constantPool.push(new ConstantNameAndTypeInfo(nameIdx, descIdx));
-    const mRefIdx = this.constantPool.length;
-    this.constantPool.push(new ConstantMethodrefInfo(classIdx, natIdx));
-    return mRefIdx;
+  private readAttributes(reader: DataReader): AttributeInfo[] {
+    const count = reader.readU2();
+    const attrs: AttributeInfo[] = [];
+    for (let i = 0; i < count; i++) {
+      let nameIdx = reader.readU2();
+      const nameUtf = this.constantPool[nameIdx] as ConstantUtf8Info;
+      if (nameUtf.isPatched && nameUtf.replacement !== nameUtf.value) {
+        nameIdx = this.getUtf8ReplacementIndex(nameUtf);
+      }
+      const len = reader.readI4();
+      const info = reader.readBytes(len);
+      attrs.push(new AttributeInfo(nameIdx, len, info));
+    }
+    return attrs;
   }
 
-  public writeClass(w?: DataWriter): Uint8Array {
-    if (!w) w = new DataWriter();
+  public writeClass(writer?: DataWriter): Uint8Array {
+    const w = writer || new DataWriter();
     w.writeI4(0xCAFEBABE);
     w.writeI4(this.minorMajorVersion);
 
-    w.writeU2(this.constantPool.length);
-    for (let i = 1; i < this.constantPool.length; i++) {
+    const cpSize = this.constantPool.length;
+    w.writeU2(cpSize);
+    for (let i = 1; i < cpSize; i++) {
       this.constantPool[i].write(w);
     }
 

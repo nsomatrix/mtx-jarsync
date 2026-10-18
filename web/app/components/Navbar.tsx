@@ -6,192 +6,156 @@ import {
   Sun,
   Moon,
   Laptop,
-  Layers,
+  Copy,
   Scissors,
   HelpCircle,
   X,
-  Cpu,
-  ShieldCheck,
-  Zap,
+  Shield,
+  Layers,
 } from "lucide-react";
 
 interface NavbarProps {
-  activeTab: "merge" | "split";
-  setActiveTab: (tab: "merge" | "split") => void;
+  activeTab: "replicate" | "split";
+  setActiveTab: (tab: "replicate" | "split") => void;
 }
 
 export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
   const { theme, setTheme } = useTheme();
-  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          {/* Logo & Brand */}
-          <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-cyan-400 p-0.5 shadow-lg shadow-indigo-500/25 flex items-center justify-center">
-              <div className="h-full w-full bg-slate-900 rounded-[10px] flex items-center justify-center">
-                <Cpu className="h-5 w-5 text-cyan-400" />
-              </div>
+      <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-black/90 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800 transition-colors">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+          {/* Logo & Product Title */}
+          <div className="flex items-center space-x-2.5">
+            <div className="h-7 w-7 rounded-md bg-neutral-900 dark:bg-neutral-100 flex items-center justify-center text-white dark:text-black">
+              <Layers className="h-4 w-4" />
             </div>
             <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-bold text-lg tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-800 dark:from-white dark:via-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
-                  MTX JarSync
-                </span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60">
-                  Client-Side SaaS
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">
-                Zero-Backend J2ME Multi-App Studio
-              </p>
+              <span className="font-semibold text-sm tracking-tight text-neutral-900 dark:text-neutral-100">
+                MTX JarSync
+              </span>
             </div>
           </div>
 
-          {/* Mode Tabs */}
-          <div className="flex items-center p-1 bg-slate-100/90 dark:bg-slate-900/90 rounded-xl border border-slate-200 dark:border-slate-800">
+          {/* Core Mode Tabs: Replicate vs Split */}
+          <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800">
             <button
-              onClick={() => setActiveTab("merge")}
-              className={`flex items-center space-x-2 px-3 sm:px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                activeTab === "merge"
-                  ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-cyan-400 shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+              onClick={() => setActiveTab("replicate")}
+              className={`flex items-center space-x-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                activeTab === "replicate"
+                  ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs"
+                  : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
               }`}
             >
-              <Layers className="h-4 w-4" />
-              <span>Merge</span>
+              <Copy className="h-3.5 w-3.5" />
+              <span>Replicate</span>
             </button>
             <button
               onClick={() => setActiveTab("split")}
-              className={`flex items-center space-x-2 px-3 sm:px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center space-x-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
                 activeTab === "split"
-                  ? "bg-white dark:bg-slate-800 text-indigo-600 dark:text-cyan-400 shadow-sm"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                  ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs"
+                  : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
               }`}
             >
-              <Scissors className="h-4 w-4" />
+              <Scissors className="h-3.5 w-3.5" />
               <span>Split</span>
             </button>
           </div>
 
-          {/* Action Tools & Theme Selector */}
-          <div className="flex items-center space-x-2">
-            {/* Info / Architecture */}
+          {/* Theme Switcher & Info */}
+          <div className="flex items-center space-x-1.5">
             <button
-              onClick={() => setShowInfoModal(true)}
-              title="How it works"
-              className="p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60 transition"
+              onClick={() => setShowInfo(true)}
+              className="p-1.5 text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-100 rounded-md transition"
+              title="About"
             >
-              <HelpCircle className="h-5 w-5" />
+              <HelpCircle className="h-4 w-4" />
             </button>
 
-            {/* Theme Toggle (Light / Dark / System) */}
-            <div className="flex items-center p-1 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800">
               <button
                 onClick={() => setTheme("light")}
-                title="Light Theme"
-                className={`p-1.5 rounded-md transition ${
+                className={`p-1 rounded-md transition ${
                   theme === "light"
-                    ? "bg-white text-amber-500 shadow-xs"
-                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    ? "bg-white text-neutral-900 shadow-xs"
+                    : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
                 }`}
+                title="Light"
               >
-                <Sun className="h-4 w-4" />
+                <Sun className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => setTheme("system")}
-                title="System Default Theme"
-                className={`p-1.5 rounded-md transition ${
+                className={`p-1 rounded-md transition ${
                   theme === "system"
-                    ? "bg-white dark:bg-slate-800 text-indigo-500 shadow-xs"
-                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs"
+                    : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
                 }`}
+                title="System Default"
               >
-                <Laptop className="h-4 w-4" />
+                <Laptop className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => setTheme("dark")}
-                title="Dark Theme"
-                className={`p-1.5 rounded-md transition ${
+                className={`p-1 rounded-md transition ${
                   theme === "dark"
-                    ? "bg-slate-800 text-cyan-400 shadow-xs"
-                    : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    ? "bg-neutral-800 text-white shadow-xs"
+                    : "text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
                 }`}
+                title="Pure Dark"
               >
-                <Moon className="h-4 w-4" />
+                <Moon className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Info / Architecture Modal */}
-      {showInfoModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl overflow-hidden">
+      {/* Info Modal */}
+      {showInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-lg bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-2xl">
             <button
-              onClick={() => setShowInfoModal(false)}
-              className="absolute top-5 right-5 p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              onClick={() => setShowInfo(false)}
+              className="absolute top-4 right-4 p-1 rounded-md text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
             >
-              <X className="h-5 w-5" />
+              <X className="h-4 w-4" />
             </button>
 
-            <div className="flex items-center space-x-3 mb-5">
-              <div className="h-10 w-10 rounded-xl bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-cyan-400 flex items-center justify-center">
-                <Zap className="h-6 w-6" />
+            <h3 className="text-base font-semibold text-neutral-900 dark:text-white mb-2">
+              How J2ME Replication & Splitting Works
+            </h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed mb-4">
+              Direct client-side port of the J2ME MTX JarSync tool. All bytecode manipulation is executed locally in memory.
+            </p>
+
+            <div className="space-y-3 text-xs text-neutral-600 dark:text-neutral-300">
+              <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                <span className="font-semibold text-neutral-900 dark:text-neutral-100 block mb-1">
+                  1. Replicate (Multi-Account / Clone)
+                </span>
+                Takes a single J2ME JAR (e.g. game, chat, utility) and replicates it into N isolated instances (from 2 up to 26).
+                Each clone gets its own package namespace (<code className="text-neutral-900 dark:text-neutral-100">b/</code>, <code className="text-neutral-900 dark:text-neutral-100">c/</code>...),
+                isolated RMS record stores, cloned static initializers (<code className="text-neutral-900 dark:text-neutral-100">&lt;clinit&gt;</code>), and an in-game switcher overlay.
               </div>
-              <div>
-                <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  Client-Side Architecture
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  100% Private, Zero Server Uploads, Pure TypeScript JVM Bytecode Rewriter
-                </p>
+
+              <div className="p-3 rounded-lg bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800">
+                <span className="font-semibold text-neutral-900 dark:text-neutral-100 block mb-1">
+                  2. Split (Deconstruct)
+                </span>
+                Extracts an existing multi-game JAR back into standalone, single-account J2ME JARs by stripping namespace prefixes and restoring manifest entries.
               </div>
             </div>
 
-            <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-800 space-y-2">
-                <div className="flex items-center space-x-2 text-indigo-600 dark:text-indigo-400 font-semibold text-xs uppercase tracking-wider">
-                  <ShieldCheck className="h-4 w-4" />
-                  <span>Privacy First Guarantee</span>
-                </div>
-                <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
-                  All bytecode manipulations, class constant pool rewrites, and archive compression happen
-                  directly inside your web browser’s WebAssembly / V8 JavaScript engine. Your game ROMs and JARs never touch an external server.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
-                  How Jar Merging Works
-                </h4>
-                <ul className="list-disc pl-5 space-y-1 text-xs text-slate-500 dark:text-slate-400">
-                  <li>Assigns distinct namespace prefixes (<code className="text-indigo-600 dark:text-cyan-400">b/</code>, <code className="text-indigo-600 dark:text-cyan-400">c/</code>... <code className="text-indigo-600 dark:text-cyan-400">z/</code>) to each sub-game to prevent class collision.</li>
-                  <li>Patches all class files, rewriting <code className="text-slate-700 dark:text-slate-300">javax.microedition.*</code> imports to custom runtime wrappers.</li>
-                  <li>Clones static initializers (<code className="text-slate-700 dark:text-slate-300">&lt;clinit&gt;</code>) and generates synthetic <code className="text-indigo-600 dark:text-cyan-400">Static.class</code> state routers.</li>
-                  <li>Bakes an interactive switcher overlay so you can switch games in-game or run on real Nokia devices and MicroEmulator.</li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-semibold text-slate-900 dark:text-slate-100 mb-1">
-                  How Jar Splitting Works
-                </h4>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Scans master manifests for multi-game index records, decodes sub-app manifests from embedded <code className="text-slate-700 dark:text-slate-300">.ini</code> entries, strips package prefixes, and re-bundles standalone playable JARs.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+            <div className="mt-5 pt-3 border-t border-neutral-200 dark:border-neutral-800 flex justify-end">
               <button
-                onClick={() => setShowInfoModal(false)}
-                className="px-5 py-2 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition shadow-sm"
+                onClick={() => setShowInfo(false)}
+                className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition"
               >
-                Got it
+                Close
               </button>
             </div>
           </div>
