@@ -32,17 +32,17 @@ import lib.MidControl;
 
 public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, ItemStateListener, MidControl {
    private static List sharedSubMenu;
-   private static final Command cmdRamRecovery = new Command("Phục hồi RAM", 4, 11);
-   private static final Command cmdRamRecoveryOn = new Command("Phục hồi (ON)", 4, 27);
-   private static final Command cmdCancel = new Command("Hủy", 4, 27);
-   private static final Command cmdBack = new Command("Quay lại", 2, 10);
-   private static final Command cmdSleepModeOn = new Command("Chế độ ngủ (ON)", 4, 25);
-   private static final Command cmdSleepModeOff = new Command("Chế độ ngủ (OFF)", 4, 25);
-   private static final Command cmdBackSubMenu = new Command("Quay lại", 2, 26);
-   private static final Command cmdSave = new Command("Lưu", 1, 21);
-   private static final Command cmdDelete = new Command("Xóa", 1, 19);
-   private static final Command cmdEdit = new Command("Sửa", 1, 20);
-   private static final Command cmdAddNew = new Command("Thêm mới", 1, 18);
+   private static final Command cmdRamRecovery = new Command("RAM Recovery", 4, 11);
+   private static final Command cmdRamRecoveryOn = new Command("RAM Recovery (ON)", 4, 27);
+   private static final Command cmdCancel = new Command("Cancel", 4, 27);
+   private static final Command cmdBack = new Command("Back", 2, 10);
+   private static final Command cmdSleepModeOn = new Command("Sleep Mode (ON)", 4, 25);
+   private static final Command cmdSleepModeOff = new Command("Sleep Mode (OFF)", 4, 25);
+   private static final Command cmdBackSubMenu = new Command("Back", 2, 26);
+   private static final Command cmdSave = new Command("Save", 1, 21);
+   private static final Command cmdDelete = new Command("Delete", 1, 19);
+   private static final Command cmdEdit = new Command("Edit", 1, 20);
+   private static final Command cmdAddNew = new Command("Add New", 1, 18);
    private int selectedSubMenuIndex;
    private static Throwable lastError;
    private static Displayable callerDisplayable;
@@ -74,7 +74,7 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
       } else {
          String var2 = sharedSubMenu.getTitle();
          sharedSubMenu.deleteAll();
-         if (var2 == "Thư mục lưu") {
+         if (var2 == "Save Directory") {
             sharedSubMenu.removeCommand(cmdAddNew);
             sharedSubMenu.removeCommand(cmdEdit);
             sharedSubMenu.removeCommand(cmdDelete);
@@ -97,7 +97,7 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
    private void showFolderMenu() {
       callerDisplayable = mainDisplay.getCurrent();
       List var1;
-      (var1 = this.createOrResetSubMenu("Thư mục lưu")).addCommand(cmdAddNew);
+      (var1 = this.createOrResetSubMenu("Save Directory")).addCommand(cmdAddNew);
       var1.addCommand(cmdEdit);
       var1.setSelectCommand(cmdEdit);
       var1.addCommand(cmdDelete);
@@ -114,17 +114,17 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
    }
    private void showRamOptionsMenu() {
       List var1;
-      (var1 = this.createOrResetSubMenu("Bộ nhớ điện thoại")).addCommand(cmdRamRecovery);
+      (var1 = this.createOrResetSubMenu("Phone Storage")).addCommand(cmdRamRecovery);
       var1.addCommand(this.sleepModeThread == null ? cmdRamRecoveryOn : cmdCancel);
       var1.addCommand(cmdBack);
       var1.addCommand(this.ramRecoveryThread == null ? cmdSleepModeOn : cmdSleepModeOff);
       var1.setFitPolicy(1);
       Runtime var2 = Runtime.getRuntime();
       var1.append("RAM:" + var2.totalMemory() / 1024L + " k", null);
-      var1.append("RAM trống:" + var2.freeMemory() / 1024L + " k", null);
-      var1.append("Mạch:" + Thread.activeCount(), null);
+      var1.append("Free RAM:" + var2.freeMemory() / 1024L + " k", null);
+      var1.append("Chain:" + Thread.activeCount(), null);
       if (suspendedDisplayable != null) {
-         var1.append("Hiển thị : ", null);
+         var1.append("Display : ", null);
          var1.append(suspendedDisplayable.toString(), null);
       }
 
@@ -138,11 +138,11 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
    private void showEditEntryForm(String var1, String var2) {
       currentSubMenuDisplayable = mainDisplay.getCurrent();
       Form var3;
-      (var3 = new Form("Sửa")).append(new TextField("Mặc định:", var1, 512, 0));
-      var3.append(new TextField("Mới:", var2, 512, 0));
+      (var3 = new Form("Edit")).append(new TextField("Default:", var1, 512, 0));
+      var3.append(new TextField("New:", var2, 512, 0));
       var3.setCommandListener(this);
-      var3.addCommand(new Command("Xác nhận", 4, 22));
-      var3.addCommand(new Command("Hủy", 2, 23));
+      var3.addCommand(new Command("Confirm", 4, 22));
+      var3.addCommand(new Command("Cancel", 2, 23));
       mainDisplay.setCurrent(var3);
    }
    private static void saveRedirectMapRecord() {
@@ -209,13 +209,13 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
       }
 
       runningMidlets = new lib.MIDlet[mainMenuList.size()];
-      var1.addCommand(new Command("Chạy ứng dụng", 1, 0));
-      var1.addCommand(new Command("Dừng ứng dụng", 1, 1));
-      var1.addCommand(new Command("Thu nhỏ", 1, 5));
-      var1.addCommand(new Command("Chỉnh độ sáng", 1, 8));
-      var1.addCommand(new Command("Tùy chọn RAM", 1, 4));
-      var1.addCommand(new Command("Cài đặt cơ bản", 1, 3));
-      var1.addCommand(new Command("Thoát", 7, 2));
+      var1.addCommand(new Command("Launch App", 1, 0));
+      var1.addCommand(new Command("Terminate App", 1, 1));
+      var1.addCommand(new Command("Minimize", 1, 5));
+      var1.addCommand(new Command("Screen Light", 1, 8));
+      var1.addCommand(new Command("RAM Options", 1, 4));
+      var1.addCommand(new Command("General Settings", 1, 3));
+      var1.addCommand(new Command("Exit", 7, 2));
       var1.setCommandListener(this);
       mainDisplay.setCurrent(mainMenuList);
       if (bgImagePath != null) {
@@ -331,7 +331,7 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
             }
          }
 
-         showError("Đã tạo sao lưu");
+         showError("Backup created successfully");
          return;
       } catch (Throwable var21) {
          lib.Display.mc.showError(var21, lib.Display.mc);
@@ -357,7 +357,7 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
                   var2 = var7.readUTF();
                } catch (Exception var5) {
                   var7.close();
-                  showError("Đã nhập khẩu sao lư");
+                  showError("Backup imported successfully");
                   return;
                }
 
@@ -568,20 +568,20 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
                return;
             case 3:
                Form var12;
-               (var12 = new Form("Cài đặt cơ bản")).addCommand(new Command("Quay lại", 2, 10));
-               var12.addCommand(new Command("Lưu", 4, 9));
-               var12.append(new TextField("Phím thu nhỏ:", String.valueOf(Canvas.menukey), 10, 2));
-               var12.append(new TextField("Thời gian đáp ứng:", String.valueOf(Canvas.waittime), 10, 2));
-               var12.append(new TextField("Bấm giờ ngủ:", String.valueOf(sleepIntervalMs / 1000L), 12, 2));
-               var12.append(new TextField("Cỡ icon (rộng * cao):", MidletInfo.iconwidth + "*" + MidletInfo.iconheight, 12, 0));
-               var12.append(new TextField("Khoảng RAM được phục hồi:", String.valueOf(ramRecoveryIntervalMs), 12, 2));
-               var12.append(new TextField("Độ trong suốt (1-255):", String.valueOf(bgOpacity), 3, 2));
-               var12.append(new TextField("Đường dẫn hình nền:", String.valueOf(bgImagePath), 256, 0));
-               var12.append(new TextField("Ổ sao lưu:", backupDirectory, 256, 0));
-               var12.append(new TextField("Mã truy cập:", "", 20, 0));
-               var12.addCommand(new Command("Tạo sao lưu", 4, 6));
-               var12.addCommand(new Command("Nhập khẩu sao lưu", 4, 7));
-               var12.addCommand(new Command("Thư mục lưu", 4, 17));
+               (var12 = new Form("General Settings")).addCommand(new Command("Back", 2, 10));
+               var12.addCommand(new Command("Save", 4, 9));
+               var12.append(new TextField("Minimize Key:", String.valueOf(Canvas.menukey), 10, 2));
+               var12.append(new TextField("Response Delay:", String.valueOf(Canvas.waittime), 10, 2));
+               var12.append(new TextField("Sleep Timer:", String.valueOf(sleepIntervalMs / 1000L), 12, 2));
+               var12.append(new TextField("Icon Size (W * H):", MidletInfo.iconwidth + "*" + MidletInfo.iconheight, 12, 0));
+               var12.append(new TextField("RAM Recovery Interval:", String.valueOf(ramRecoveryIntervalMs), 12, 2));
+               var12.append(new TextField("Opacity (1-255):", String.valueOf(bgOpacity), 3, 2));
+               var12.append(new TextField("Background Image Path:", String.valueOf(bgImagePath), 256, 0));
+               var12.append(new TextField("Backup Path:", backupDirectory, 256, 0));
+               var12.append(new TextField("Access Code:", "", 20, 0));
+               var12.addCommand(new Command("Create Backup", 4, 6));
+               var12.addCommand(new Command("Import Backup", 4, 7));
+               var12.addCommand(new Command("Save Directory", 4, 17));
                var12.setCommandListener(this);
                mainDisplay.setCurrent(var12);
                return;
@@ -600,12 +600,12 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
                return;
             case 8:
                Form var11;
-               (var11 = new Form("Chỉnh đèn màn hình")).setCommandListener(this);
-               var11.append(new Gauge("Độ sáng", true, 100, screenLightLevel));
-               var11.append(new Gauge("Độ sáng", true, 10, screenLightLevel / 10));
+               (var11 = new Form("Screen Light Settings")).setCommandListener(this);
+               var11.append(new Gauge("Brightness", true, 100, screenLightLevel));
+               var11.append(new Gauge("Brightness", true, 10, screenLightLevel / 10));
                var11.setItemStateListener(this);
-               var11.addCommand(new Command("Quay lại", 2, 10));
-               var11.addCommand(new Command("Lưu", 4, 24));
+               var11.addCommand(new Command("Back", 2, 10));
+               var11.addCommand(new Command("Save", 4, 24));
                mainDisplay.setCurrent(var11);
                return;
             case 9:
@@ -656,7 +656,7 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
                   return;
                }
 
-               showError("Mật khẩu lỗi");
+               showError("Incorrect Password");
                return;
             case 13:
                this.notifyDestroyed();
@@ -798,10 +798,10 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
             var9.close();
             if (securityPassword.length() > 0) {
                Form var10;
-               (var10 = new Form("Mật khẩu")).append(new TextField("Mã truy cập:", "", 20, 0));
+               (var10 = new Form("Password")).append(new TextField("Access Code:", "", 20, 0));
                var10.setCommandListener(this);
-               var10.addCommand(new Command("Xác nhận", 4, 12));
-               var10.addCommand(new Command("Thoát", 7, 13));
+               var10.addCommand(new Command("Confirm", 4, 12));
+               var10.addCommand(new Command("Exit", 7, 13));
                mainDisplay.setCurrent(var10);
             } else {
                this.initMainUi();

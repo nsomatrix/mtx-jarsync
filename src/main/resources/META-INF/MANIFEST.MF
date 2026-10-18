@@ -2,17 +2,17 @@ Manifest-Version: 1.0
 Ant-Version: Apache Ant 1.9.1
 Created-By: 1.8.0_05-b13 (Oracle Corporation)
 MIDlet-1: MTX JarSync,/icon.png,mtx.jarsync.Midlet
-add: Thêm vào d.sách
+add: Add to List
 savedir: file:///c/MultiMidlet/MtxJarSync.jar
 MIDlet-Vendor: Matrix
 MIDlet-Version: 3.6.3
-view: D.sách ứng dụng
-set: Cài đặt
+view: Application List
+set: Settings
 icon: file:///c/icon.png
-start: Bắt đầu ghép
+start: Build Combined Jar
 MIDlet-Name: MTX JarSync 3.6.3
-delete: Xóa khỏi d.sách
-selectall: Chọn tất cả
+delete: Remove from List
+selectall: Select All
 MicroEdition-Configuration: CLDC-1.1
 MicroEdition-Profile: MIDP-2.0
 

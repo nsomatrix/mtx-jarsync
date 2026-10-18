@@ -87,8 +87,8 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
     private Displayable settingsDisplayable;
 
     private final Form progressForm = new Form("");
-    private final Form buildSettingsForm = new Form("Thêm & C.đặt");
-    private final Form midletSettingsForm = new Form("Thêm vào cài đặt");
+    private final Form buildSettingsForm = new Form("Add & Settings");
+    private final Form midletSettingsForm = new Form("Add to Settings");
 
     private Image iconImage;
     private Image folderImage;
@@ -117,10 +117,10 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
         this.folderImage = Base64Resources.getImage('b');
 
         this.tfIcon = new TextField("Icon:", null, 200, 0);
-        this.tfAppName = new TextField("Tên ứng dụng:", null, 200, 0);
-        this.tfDisplayName = new TextField("Tên hiển thị:", null, 200, 0);
-        this.tfAuthor = new TextField("Tên tác giả:", null, 200, 0);
-        this.tfSavePath = new TextField("Nơi lưu:", null, 200, 0);
+        this.tfAppName = new TextField("App Name:", null, 200, 0);
+        this.tfDisplayName = new TextField("Display Name:", null, 200, 0);
+        this.tfAuthor = new TextField("Author Name:", null, 200, 0);
+        this.tfSavePath = new TextField("Save Location:", null, 200, 0);
 
         this.buildSettingsForm.append(this.tfIcon);
         this.buildSettingsForm.append(this.tfAppName);
@@ -135,12 +135,12 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
         this.midletSettingsForm.addCommand(backCmd);
         this.progressForm.addCommand(backCmd);
 
-        this.midletSettingsForm.append(new TextField("Số lượng:", null, 2, 2));
+        this.midletSettingsForm.append(new TextField("Count:", null, 2, 2));
         for (int i = 1; i < 27; i++) {
-            this.midletSettingsForm.append(new TextField("Tên hiển thị " + i + ":", null, 20, 0));
+            this.midletSettingsForm.append(new TextField("Display Name " + i + ":", null, 20, 0));
         }
         this.midletSettingsForm.setCommandListener(this);
-        this.midletSettingsForm.addCommand(new Command("Thêm", 4, 1));
+        this.midletSettingsForm.addCommand(new Command("Add", 4, 1));
         this.progressForm.setCommandListener(this);
 
         try {
@@ -156,9 +156,9 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
     private void initStandardUI() {
         this.fileBrowserDisplayable = new List(Base64Resources.getString('c'), Choice.IMPLICIT);
         this.fileBrowserChoice = (Choice) this.fileBrowserDisplayable;
-        this.appListDisplayable = new List("Danh sách", Choice.MULTIPLE);
+        this.appListDisplayable = new List("List", Choice.MULTIPLE);
         this.appListChoice = (Choice) this.appListDisplayable;
-        this.settingsDisplayable = new List("Cài đặt", Choice.MULTIPLE);
+        this.settingsDisplayable = new List("Settings", Choice.MULTIPLE);
         this.settingsChoice = (Choice) this.settingsDisplayable;
         this.setupDisplayables();
     }
@@ -166,9 +166,9 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
     private void initCanvasUI() {
         this.fileBrowserDisplayable = new CustomChoiceCanvas(Base64Resources.getString('c'), Choice.IMPLICIT);
         this.fileBrowserChoice = (Choice) this.fileBrowserDisplayable;
-        this.appListDisplayable = new CustomChoiceCanvas("Danh sách", Choice.MULTIPLE);
+        this.appListDisplayable = new CustomChoiceCanvas("List", Choice.MULTIPLE);
         this.appListChoice = (Choice) this.appListDisplayable;
-        this.settingsDisplayable = new CustomChoiceCanvas("Cài đặt", Choice.MULTIPLE);
+        this.settingsDisplayable = new CustomChoiceCanvas("Settings", Choice.MULTIPLE);
         this.settingsChoice = (Choice) this.settingsDisplayable;
         this.setupDisplayables();
     }
@@ -183,23 +183,23 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
         this.fileBrowserDisplayable.addCommand(backCmd);
         this.appListDisplayable.addCommand(backCmd);
         this.settingsDisplayable.addCommand(backCmd);
-        this.settingsDisplayable.addCommand(new Command("Lưu", 4, 1));
+        this.settingsDisplayable.addCommand(new Command("Save", 4, 1));
         this.settingsDisplayable.setCommandListener(this);
 
-        this.settingsChoice.append("Kich hoạt chụp ảnh m.hình", null);
-        this.settingsChoice.append("Kích hoạt d.sách", null);
-        this.settingsChoice.append("Kích hoạt d.sách trang chính", null);
-        this.settingsChoice.append("Thêm hình nền", null);
-        this.settingsChoice.append("S.dụng d.sách", null);
-        this.settingsChoice.append("Kích hoạt d.sách màu", null);
+        this.settingsChoice.append("Enable Screenshot", null);
+        this.settingsChoice.append("Enable List", null);
+        this.settingsChoice.append("Enable Main Menu List", null);
+        this.settingsChoice.append("Add Background", null);
+        this.settingsChoice.append("Use List", null);
+        this.settingsChoice.append("Enable Color List", null);
         this.settingsChoice.setSelectedIndex(4, this.featureCustomCanvasUI);
 
         this.appListChoice.setFitPolicy(Choice.TEXT_WRAP_OFF);
         this.fileBrowserDisplayable.addCommand(new Command(Base64Resources.getString('f'), 7, 3));
         this.fileBrowserDisplayable.addCommand(new Command(Base64Resources.getString('o'), 5, 4));
         this.fileBrowserDisplayable.addCommand(new Command(Base64Resources.get("add"), 8, 5));
-        this.fileBrowserDisplayable.addCommand(new Command("Thêm tất cả", 1, 6));
-        this.fileBrowserDisplayable.addCommand(new Command("Cài đặt", 3, 7));
+        this.fileBrowserDisplayable.addCommand(new Command("Add All", 1, 6));
+        this.fileBrowserDisplayable.addCommand(new Command("Settings", 3, 7));
 
         this.appListDisplayable.addCommand(new Command(Base64Resources.get("start"), 1, 5));
         this.appListDisplayable.addCommand(new Command(Base64Resources.get("delete"), 3, 5));
@@ -381,14 +381,14 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
                         if (entries.elementAt(0) == this) {
                             entries.removeAllElements();
                             this.byteInputStream.close();
-                            showAlert(path + " Đọc thất bại: file zip không hợp lệ");
+                            showAlert(path + " Read failed: invalid zip file");
                             return;
                         }
                         MidletEntry entry = new MidletEntry(path, entries);
                         parsedEntriesMap.put(path, entry);
                         this.openMidletSettingsForm(entry);
                     } catch (Exception e) {
-                        showAlert(path + " Đọc thất bại: " + e.toString());
+                        showAlert(path + " Read failed: " + e.toString());
                         failedJarsMap.put(path, path);
                     }
                 }
@@ -422,7 +422,7 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
                 char statusChar = success ? 'h' : 'i';
                 StringBuffer msg = new StringBuffer();
                 msg.append(Base64Resources.getString(statusChar));
-                msg.append(Base64Resources.getString('j')).append("Tổng thời gian\n").append(System.currentTimeMillis() - startTime);
+                msg.append(Base64Resources.getString('j')).append("Total time\n").append(System.currentTimeMillis() - startTime);
                 this.progressForm.append(msg.append(Base64Resources.getString('k')).toString());
                 try {
                     Thread.sleep(1000L);
@@ -441,13 +441,13 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
             String dirPath = outPath.substring(0, lastSlash + 1);
             FileConnection dirConn = getReadConnection(dirPath);
             if (dirConn == null) {
-                this.progressForm.append("Đường dẫn không hợp lệ " + outPath);
+                this.progressForm.append("Invalid path " + outPath);
                 return false;
             }
             if (!dirConn.isDirectory()) {
                 Throwable t = ensureDirectoryExists(dirPath);
                 if (t != null) {
-                    this.progressForm.append("Không thể tạo thư mục\n" + dirPath + "\n" + t.toString());
+                    this.progressForm.append("Cannot create directory\n" + dirPath + "\n" + t.toString());
                     return false;
                 }
             }
@@ -464,7 +464,7 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
             try {
                 targetConn.create();
             } catch (Exception e) {
-                this.progressForm.append("Không thể tạo file\n" + outPath);
+                this.progressForm.append("Cannot create file\n" + outPath);
                 return false;
             }
 
@@ -604,7 +604,7 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
                         zos.write(patchClassBytes(classBytes, midletChar));
                         zos.closeEntry();
                     } else {
-                        this.progressForm.append(name + " Xuất ra thất bại\n");
+                        this.progressForm.append(name + " Export failed\n");
                     }
                 } catch (Exception ignored) {
                 }
@@ -630,7 +630,7 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
         Vector resEntries = entry.getResourceEntries();
         int resTotal = resEntries.size();
         if (resTotal > 0) {
-            Gauge resGauge = new Gauge(entry.jarPath + " Tài nguyên", false, resTotal, 0);
+            Gauge resGauge = new Gauge(entry.jarPath + " Resources", false, resTotal, 0);
             this.progressForm.append(resGauge);
             int statusIdx = this.progressForm.append(itemStatus);
             display.setCurrent(this.progressForm);
@@ -682,7 +682,7 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
             zos.putNextEntry("mtx/mid.png");
             byte[] iconBytes = readFileBytes(this.tfIcon.getString());
             if (iconBytes == null) {
-                this.progressForm.append(this.tfIcon.getString() + " Đọc thất bại");
+                this.progressForm.append(this.tfIcon.getString() + " Read failed");
                 zos.write(readResourceBytes("/icon.png"));
             } else {
                 zos.write(iconBytes);

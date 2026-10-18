@@ -760,7 +760,7 @@ public class List extends javax.microedition.lcdui.Canvas implements Choice {
          if (!this.showingCommandsMenu) {
             if (!this.hideTitleBar) {
                if (var21 > 1) {
-                  var1.drawString(var21 > 2 ? "Tùy chọn" : ((Command)this.commandVector.elementAt(1)).getLabel(), 2, var18, 20);
+                  var1.drawString(var21 > 2 ? "Options" : ((Command)this.commandVector.elementAt(1)).getLabel(), 2, var18, 20);
                }
 
                var1.drawString(((Command)this.commandVector.elementAt(0)).getLabel(), var2 - 2, var18, 24);
@@ -768,8 +768,8 @@ public class List extends javax.microedition.lcdui.Canvas implements Choice {
             }
          } else {
             if (var21 > 1) {
-               var1.drawString("Chọn", 2, var18, 20);
-               var1.drawString("Hủy", var2 - 2, var18, 24);
+               var1.drawString("Select", 2, var18, 20);
+               var1.drawString("Cancel", var2 - 2, var18, 24);
             }
 
             int var24 = 0;

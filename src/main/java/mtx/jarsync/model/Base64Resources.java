@@ -23,24 +23,24 @@ public final class Base64Resources {
 
         RESOURCES.put("a", "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAaVBMVEX//////5zGmhj///+lcgz/64T/85yceRj/54T/43vw5Hn/14T/12v91W//x1riwU/av2vnvlLvukL//6W/mSjAlhj/+/f7+Zb/95TOoiHPoiXJoCD/84z38InOvFudehnXuD/is0LeskJgRnPAAAAAAXRSTlMAQObYZgAAAGVJREFUeF6NzMUSAjEURNEnybgrbv//kaRDhhRVLObs+i6a/jg6P1sdiVuUHRXPh+QCCnJHsK1ExoVSOtVFIVOEWq4cNCvC8zwegv6GcHqwDQaDUyk4D16fwNVmQqA5SslLv2iXNzT1Bkn/ZlYxAAAAAElFTkSuQmCC");
         RESOURCES.put("b", "iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABWElEQVR42qSSu0rEQBSG/4lB1rUwbzBYe2MLGx9ARRTFW2thJVjYWNoJFtr5AJY+g4KPICJrIQgS62V3c1lJshv3OMlkQ2Z3IqIHBs5k5vvPf06G2TfTKAka2jPdJbMMnlrYgFXbF2kE5+kW7vMD6USMsvLW/DLg24Bnw5pZKrumFSC+dwn0PoHQE8sFuj745qGurZIWWE9Ub6N+dZFu504OgAnjVw6I755LAQoLX0XOIvD1tREXpr56C+gHBQGR+0KkYvzogPjOmRDoSpgC1UE/TMX56qLiQpVMYK8h4ayFsXFTwhRJZ8aXimQPifj2qThM7DckPBAZwCTEIc4nK0Ac4+PuJeULM0gqNBW4fn0v/8JRTcIUA50OUK0qMyC+dZxOeaRyHhmcUwb4ymzqXDoI2lrbSuViJC6KQ3TeHst7HoazcOxW/g6Y+/5KYuEPwRgR4T/xLcAAcgGzK7lP0fEAAAAASUVORK5CYII=");
-        RESOURCES.put("c", "Chọn tệp tin");
-        RESOURCES.put("d", "Mở");
-        RESOURCES.put("e", "Quay lại");
-        RESOURCES.put("f", "Thoát");
-        RESOURCES.put("h", "Ghép thành công! ");
-        RESOURCES.put("i", "Có lỗi xảy ra! ");
-        RESOURCES.put("j", " Tập tin ");
-        RESOURCES.put("k", " Xử lý ");
+        RESOURCES.put("c", "Select File");
+        RESOURCES.put("d", "Open");
+        RESOURCES.put("e", "Back");
+        RESOURCES.put("f", "Exit");
+        RESOURCES.put("h", "Build Successful! ");
+        RESOURCES.put("i", "An error occurred! ");
+        RESOURCES.put("j", " Files ");
+        RESOURCES.put("k", " Processing ");
         RESOURCES.put("n", "(MTX JarSync)");
-        RESOURCES.put("o", "Xem tiến trình");
-        RESOURCES.put("add", "Thêm vào d.sách");
-        RESOURCES.put("delete", "Xóa");
+        RESOURCES.put("o", "View Progress");
+        RESOURCES.put("add", "Add to List");
+        RESOURCES.put("delete", "Delete");
         RESOURCES.put("icon", "file:///c/icon.png");
         RESOURCES.put("savedir", "file:///c/MultiMidlet/MtxJarSync.jar");
-        RESOURCES.put("selectall", "Chọn tất cả");
-        RESOURCES.put("set", "Cài đặt");
-        RESOURCES.put("start", "Bắt đầu ghép");
-        RESOURCES.put("view", "D.sách ứng dụng");
+        RESOURCES.put("selectall", "Select All");
+        RESOURCES.put("set", "Settings");
+        RESOURCES.put("start", "Start Build");
+        RESOURCES.put("view", "Application List");
     }
 
     public static Base64Resources getInstance() {

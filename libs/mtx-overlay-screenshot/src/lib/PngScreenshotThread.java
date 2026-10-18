@@ -144,7 +144,7 @@ final class PngScreenshotThread extends Thread {
          System.gc();
          return var16;
       } catch (Throwable var10) {
-         Display.mc.showError(var10, "Chụp ảnh màn hình, lỗi màn hình, không nén dữ liệu");
+         Display.mc.showError(var10, "Screenshot error: Failed to capture screen buffer, uncompressed");
          return null;
       }
    }
@@ -198,7 +198,7 @@ final class PngScreenshotThread extends Thread {
                   String var21 = var4.substring(0, var6);
                   Throwable var23;
                   if (!createdDirectories.contains(var21) && (var23 = ensureParentDirectoryExists(var21)) != null) {
-                     Display.mc.showError(var23, "Chụp ảnh màn hình, không thể tạo thư mục" + var21);
+                     Display.mc.showError(var23, "Screenshot error: Failed to create directory " + var21);
                      break label100;
                   }
                }
@@ -220,7 +220,7 @@ final class PngScreenshotThread extends Thread {
                (var3 = var2.openOutputStream()).write(var1);
                var3.flush();
             } catch (Throwable var18) {
-               Display.mc.showError(var18, "Chụp ảnh màn hình, không thể tạo file" + var22);
+               Display.mc.showError(var18, "Screenshot error: Failed to create file " + var22);
             } finally {
                try {
                   var3.close();

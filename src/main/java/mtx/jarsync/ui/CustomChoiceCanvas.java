@@ -679,14 +679,14 @@ public final class CustomChoiceCanvas extends Canvas implements Choice {
             if (!this.menuOpen) {
                 if (!this.isFullScreen) {
                     if (cmdCount > 1) {
-                        g.drawString(cmdCount > 2 ? "Tùy chọn" : ((Command) this.commands.elementAt(1)).getLabel(), 2, bottomBarY, Graphics.TOP | Graphics.LEFT);
+                        g.drawString(cmdCount > 2 ? "Options" : ((Command) this.commands.elementAt(1)).getLabel(), 2, bottomBarY, Graphics.TOP | Graphics.LEFT);
                     }
                     g.drawString(((Command) this.commands.elementAt(0)).getLabel(), width - 2, bottomBarY, Graphics.TOP | Graphics.RIGHT);
                 }
             } else {
                 if (cmdCount > 1) {
-                    g.drawString("Chọn", 2, bottomBarY, Graphics.TOP | Graphics.LEFT);
-                    g.drawString("Hủy", width - 2, bottomBarY, Graphics.TOP | Graphics.RIGHT);
+                    g.drawString("Select", 2, bottomBarY, Graphics.TOP | Graphics.LEFT);
+                    g.drawString("Cancel", width - 2, bottomBarY, Graphics.TOP | Graphics.RIGHT);
                 }
 
                 int maxCmdWidth = 0;
