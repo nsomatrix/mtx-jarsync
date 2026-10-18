@@ -462,7 +462,7 @@ export class ClassPatcher {
   private patchFieldDescriptor(utf: ConstantUtf8Info) {
     if (!utf.isPatched) {
       utf.isPatched = true;
-      let desc = utf.value;
+      const desc = utf.value;
       if (desc.startsWith('[') || desc.startsWith('L')) {
         const lIdx = desc.indexOf('L') + 1;
         if (lIdx > 0) {

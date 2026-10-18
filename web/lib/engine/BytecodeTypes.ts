@@ -8,7 +8,7 @@ export abstract class CpInfo {
 export class ConstantDummyInfo extends CpInfo {
   static INSTANCE = new ConstantDummyInfo();
   constructor() { super(0); }
-  write(_writer: DataWriter): void {}
+  write(): void {}
 }
 
 export class ConstantUtf8Info extends CpInfo {

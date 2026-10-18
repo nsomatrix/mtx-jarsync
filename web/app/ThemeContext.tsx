@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -12,16 +12,26 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark");
+function subscribe(callback: () => void) {
+  window.addEventListener("storage", callback);
+  return () => window.removeEventListener("storage", callback);
+}
 
-  useEffect(() => {
-    const saved = localStorage.getItem("mtx-theme") as Theme | null;
-    if (saved && (saved === "light" || saved === "dark" || saved === "system")) {
-      setThemeState(saved);
+function getStoredTheme(): Theme {
+  if (typeof window === "undefined") return "dark";
+  try {
+    const val = localStorage.getItem("mtx-theme") as Theme | null;
+    if (val === "light" || val === "dark" || val === "system") {
+      return val;
     }
-  }, []);
+  } catch {}
+  return "dark";
+}
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const storedTheme = useSyncExternalStore(subscribe, getStoredTheme, () => "dark" as Theme);
+  const [theme, setThemeState] = useState<Theme>(storedTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
