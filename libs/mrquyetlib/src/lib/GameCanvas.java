@@ -4,13 +4,12 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
 public abstract class GameCanvas extends Canvas {
-   // $VF: renamed from: a javax.microedition.lcdui.Image
-   private static Image field_5;
+   private static Image offscreenBuffer;
 
    protected GameCanvas(boolean var1) {
-      if (field_5 == null) {
+      if (offscreenBuffer == null) {
          super.setFullScreenMode(true);
-         field_5 = Image.createImage(super.getWidth(), super.getHeight());
+         offscreenBuffer = Image.createImage(super.getWidth(), super.getHeight());
          super.setFullScreenMode(false);
       }
    }
@@ -24,7 +23,7 @@ public abstract class GameCanvas extends Canvas {
    }
 
    protected Graphics getGraphics() {
-      return field_5.getGraphics();
+      return offscreenBuffer.getGraphics();
    }
 
    public int getKeyStates() {
@@ -33,7 +32,7 @@ public abstract class GameCanvas extends Canvas {
 
    public void PAINT(Graphics var1) {
       try {
-         var1.drawImage(field_5, 0, 0, 20);
+         var1.drawImage(offscreenBuffer, 0, 0, 20);
       } catch (Throwable var2) {
       }
    }

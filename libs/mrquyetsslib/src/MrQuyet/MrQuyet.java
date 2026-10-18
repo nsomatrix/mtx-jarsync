@@ -31,172 +31,126 @@ import lib.Canvas;
 import lib.MidControl;
 
 public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemStateListener, MidControl {
-   // $VF: renamed from: a javax.microedition.lcdui.List
-   private static List field_109;
-   // $VF: renamed from: a javax.microedition.lcdui.Command
-   private static final Command field_110 = new Command("Phục hồi RAM", 4, 11);
-   // $VF: renamed from: b javax.microedition.lcdui.Command
-   private static final Command field_111 = new Command("Phục hồi (ON)", 4, 27);
-   // $VF: renamed from: c javax.microedition.lcdui.Command
-   private static final Command field_112 = new Command("Phục hồi (OFF)", 4, 27);
-   // $VF: renamed from: d javax.microedition.lcdui.Command
-   private static final Command field_113 = new Command("Quay lại", 2, 10);
-   // $VF: renamed from: e javax.microedition.lcdui.Command
-   private static final Command field_114 = new Command("Chế độ ngủ (ON)", 4, 25);
-   // $VF: renamed from: f javax.microedition.lcdui.Command
-   private static final Command field_115 = new Command("Chế độ ngủ (OFF)", 4, 25);
-   // $VF: renamed from: g javax.microedition.lcdui.Command
-   private static final Command field_116 = new Command("Quay lại", 2, 26);
-   // $VF: renamed from: h javax.microedition.lcdui.Command
-   private static final Command field_117 = new Command("Lưu", 1, 21);
-   // $VF: renamed from: i javax.microedition.lcdui.Command
-   private static final Command field_118 = new Command("Xóa", 1, 19);
-   // $VF: renamed from: j javax.microedition.lcdui.Command
-   private static final Command field_119 = new Command("Sửa", 1, 20);
-   // $VF: renamed from: k javax.microedition.lcdui.Command
-   private static final Command field_120 = new Command("Thêm mới", 1, 18);
-   // $VF: renamed from: a int
-   private int field_121;
-   // $VF: renamed from: a java.lang.Throwable
-   private static Throwable field_122;
-   // $VF: renamed from: a javax.microedition.lcdui.Displayable
-   private static Displayable field_123;
-   // $VF: renamed from: b javax.microedition.lcdui.Displayable
-   private static Displayable field_124;
-   // $VF: renamed from: a javax.microedition.lcdui.Alert
-   private static Alert field_125;
-   // $VF: renamed from: a long
-   private static long field_126 = 0L;
-   // $VF: renamed from: b int
-   private static int field_127 = 30;
-   // $VF: renamed from: a javax.microedition.lcdui.Display
-   private static Display field_128;
-   // $VF: renamed from: c javax.microedition.lcdui.Displayable
-   private static Displayable field_129;
-   // $VF: renamed from: b javax.microedition.lcdui.List
-   private static List field_130;
-   // $VF: renamed from: now int
-   public static int field_131;
-   // $VF: renamed from: a lib.MIDlet[]
-   private static lib.MIDlet[] field_132;
-   // $VF: renamed from: a MrQuyet.MidletInfo[]
-   private static MidletInfo[] field_133 = new MidletInfo[30];
+   private static List sharedSubMenu;
+   private static final Command cmdRamRecovery = new Command("Phục hồi RAM", 4, 11);
+   private static final Command cmdRamRecoveryOn = new Command("Phục hồi (ON)", 4, 27);
+   private static final Command cmdRamRecoveryOff = new Command("Phục hồi (OFF)", 4, 27);
+   private static final Command cmdBack = new Command("Quay lại", 2, 10);
+   private static final Command cmdSleepModeOn = new Command("Chế độ ngủ (ON)", 4, 25);
+   private static final Command cmdSleepModeOff = new Command("Chế độ ngủ (OFF)", 4, 25);
+   private static final Command cmdBackSubMenu = new Command("Quay lại", 2, 26);
+   private static final Command cmdSave = new Command("Lưu", 1, 21);
+   private static final Command cmdDelete = new Command("Xóa", 1, 19);
+   private static final Command cmdEdit = new Command("Sửa", 1, 20);
+   private static final Command cmdAddNew = new Command("Thêm mới", 1, 18);
+   private int selectedSubMenuIndex;
+   private static Throwable lastError;
+   private static Displayable callerDisplayable;
+   private static Displayable currentSubMenuDisplayable;
+   private static Alert infoAlert;
+   private static long errorTimestamp = 0L;
+   private static int screenLightLevel = 30;
+   private static Display mainDisplay;
+   private static Displayable suspendedDisplayable;
+   private static List mainMenuList;
+   public static int currentMidletIndex;
+   private static lib.MIDlet[] runningMidlets;
+   private static MidletInfo[] midletInfoList = new MidletInfo[30];
    public static final PrintStream debugout = System.out;
-   // $VF: renamed from: map java.util.Hashtable
-   public static final Hashtable field_134 = new Hashtable();
-   // $VF: renamed from: a java.lang.Thread
-   private Thread field_135;
-   // $VF: renamed from: b java.lang.Thread
-   private Thread field_136;
-   // $VF: renamed from: a java.lang.String
-   private static String field_137;
-   // $VF: renamed from: b java.lang.String
-   private static String field_138;
-   // $VF: renamed from: c java.lang.String
-   private static String field_139 = "/MrQuyet/MrQuyet.png";
-   // $VF: renamed from: b long
-   private static long field_140 = 300000L;
-   // $VF: renamed from: c long
-   private static long field_141 = 5000L;
-   // $VF: renamed from: a boolean
-   private boolean field_142 = true;
-   // $VF: renamed from: c int
-   private static int field_143;
-   // $VF: renamed from: d int
-   private static int field_144 = 100;
-
-   // $VF: renamed from: a (java.lang.String) javax.microedition.lcdui.List
-   private List method_33(String var1) {
-      if (field_109 == null) {
-         (field_109 = new List(var1, 3)).setCommandListener(this);
+   public static final Hashtable networkRedirectMap = new Hashtable();
+   private Thread ramRecoveryThread;
+   private Thread sleepModeThread;
+   private static String securityPassword;
+   private static String backupDirectory;
+   private static String bgImagePath = "/MrQuyet/MrQuyet.png";
+   private static long sleepIntervalMs = 300000L;
+   private static long ramRecoveryIntervalMs = 5000L;
+   private boolean firstTimeRun = true;
+   private static int threadActionCode;
+   private static int bgOpacity = 100;
+   private List createOrResetSubMenu(String var1) {
+      if (sharedSubMenu == null) {
+         (sharedSubMenu = new List(var1, 3)).setCommandListener(this);
       } else {
-         String var2 = field_109.getTitle();
-         field_109.deleteAll();
+         String var2 = sharedSubMenu.getTitle();
+         sharedSubMenu.deleteAll();
          if (var2 == "Thư mục lưu") {
-            field_109.removeCommand(field_120);
-            field_109.removeCommand(field_119);
-            field_109.removeCommand(field_118);
-            field_109.removeCommand(field_117);
-            field_109.removeCommand(field_116);
+            sharedSubMenu.removeCommand(cmdAddNew);
+            sharedSubMenu.removeCommand(cmdEdit);
+            sharedSubMenu.removeCommand(cmdDelete);
+            sharedSubMenu.removeCommand(cmdSave);
+            sharedSubMenu.removeCommand(cmdBackSubMenu);
          } else {
-            field_109.removeCommand(field_110);
-            field_109.removeCommand(field_111);
-            field_109.removeCommand(field_112);
-            field_109.removeCommand(field_113);
-            field_109.removeCommand(field_114);
-            field_109.removeCommand(field_115);
+            sharedSubMenu.removeCommand(cmdRamRecovery);
+            sharedSubMenu.removeCommand(cmdRamRecoveryOn);
+            sharedSubMenu.removeCommand(cmdRamRecoveryOff);
+            sharedSubMenu.removeCommand(cmdBack);
+            sharedSubMenu.removeCommand(cmdSleepModeOn);
+            sharedSubMenu.removeCommand(cmdSleepModeOff);
          }
 
-         field_109.setTitle(var1);
+         sharedSubMenu.setTitle(var1);
       }
 
-      return field_109;
+      return sharedSubMenu;
    }
-
-   // $VF: renamed from: a () void
-   private void method_34() {
-      field_123 = field_128.getCurrent();
+   private void showFolderMenu() {
+      callerDisplayable = mainDisplay.getCurrent();
       List var1;
-      (var1 = this.method_33("Thư mục lưu")).addCommand(field_120);
-      var1.addCommand(field_119);
-      var1.setSelectCommand(field_119);
-      var1.addCommand(field_118);
-      var1.addCommand(field_117);
-      var1.addCommand(field_116);
-      Enumeration var2 = field_134.keys();
+      (var1 = this.createOrResetSubMenu("Thư mục lưu")).addCommand(cmdAddNew);
+      var1.addCommand(cmdEdit);
+      var1.setSelectCommand(cmdEdit);
+      var1.addCommand(cmdDelete);
+      var1.addCommand(cmdSave);
+      var1.addCommand(cmdBackSubMenu);
+      Enumeration var2 = networkRedirectMap.keys();
 
       while (var2.hasMoreElements()) {
          var1.append((String)var2.nextElement(), null);
       }
 
       var1.setCommandListener(this);
-      field_128.setCurrent(var1);
+      mainDisplay.setCurrent(var1);
    }
-
-   // $VF: renamed from: b () void
-   private void method_35() {
+   private void showRamOptionsMenu() {
       List var1;
-      (var1 = this.method_33("Bộ nhớ điện thoại")).addCommand(field_110);
-      var1.addCommand(this.field_136 == null ? field_111 : field_112);
-      var1.addCommand(field_113);
-      var1.addCommand(this.field_135 == null ? field_114 : field_115);
+      (var1 = this.createOrResetSubMenu("Bộ nhớ điện thoại")).addCommand(cmdRamRecovery);
+      var1.addCommand(this.sleepModeThread == null ? cmdRamRecoveryOn : cmdRamRecoveryOff);
+      var1.addCommand(cmdBack);
+      var1.addCommand(this.ramRecoveryThread == null ? cmdSleepModeOn : cmdSleepModeOff);
       var1.setFitPolicy(1);
       Runtime var2 = Runtime.getRuntime();
       var1.append("RAM:" + var2.totalMemory() / 1024L + " k", null);
       var1.append("RAM trống:" + var2.freeMemory() / 1024L + " k", null);
       var1.append("Mạch:" + Thread.activeCount(), null);
-      if (field_129 != null) {
+      if (suspendedDisplayable != null) {
          var1.append("Hiển thị : ", null);
-         var1.append(field_129.toString(), null);
+         var1.append(suspendedDisplayable.toString(), null);
       }
 
-      if (field_122 != null) {
+      if (lastError != null) {
          var1.append("Exception : ", null);
-         var1.append(field_122.toString(), null);
+         var1.append(lastError.toString(), null);
       }
 
-      field_128.setCurrent(var1);
+      mainDisplay.setCurrent(var1);
    }
-
-   // $VF: renamed from: a (java.lang.String, java.lang.String) void
-   private void method_36(String var1, String var2) {
-      field_124 = field_128.getCurrent();
+   private void showEditEntryForm(String var1, String var2) {
+      currentSubMenuDisplayable = mainDisplay.getCurrent();
       Form var3;
       (var3 = new Form("Sửa")).append(new TextField("Mặc định:", var1, 512, 0));
       var3.append(new TextField("Mới:", var2, 512, 0));
       var3.setCommandListener(this);
       var3.addCommand(new Command("Xác nhận", 4, 22));
       var3.addCommand(new Command("Hủy", 2, 23));
-      field_128.setCurrent(var3);
+      mainDisplay.setCurrent(var3);
    }
-
-   // $VF: renamed from: c () void
-   private static void method_37() {
-      Hashtable var0 = field_134;
+   private static void saveRedirectMapRecord() {
+      Hashtable var0 = networkRedirectMap;
 
       try {
          RecordStore var1 = RecordStore.openRecordStore("MrQuyet_rms_urlmap", true);
-         if (field_134.isEmpty() && var1.getNumRecords() > 0) {
+         if (networkRedirectMap.isEmpty() && var1.getNumRecords() > 0) {
             var1.setRecord(1, new byte[0], 0, 0);
             var1.closeRecordStore();
          } else {
@@ -224,45 +178,37 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
       } catch (Exception var6) {
       }
    }
-
-   // $VF: renamed from: a (javax.microedition.lcdui.Form, int) java.lang.String
-   private static String method_38(Form var0, int var1) {
+   private static String getTextFieldValue(Form var0, int var1) {
       return ((TextField)var0.get(var1)).getString();
    }
-
-   // $VF: renamed from: a (java.lang.String, int) int
-   private static int method_39(String var0, int var1) {
+   private static int parseStringToInt(String var0, int var1) {
       try {
          return Integer.parseInt(var0);
       } catch (Exception var2) {
          return var1;
       }
    }
-
-   // $VF: renamed from: a (java.lang.String, long) long
-   private static long method_40(String var0, long var1) {
+   private static long parseStringToLong(String var0, long var1) {
       try {
          return Long.parseLong(var0);
       } catch (Exception var3) {
          return var1;
       }
    }
-
-   // $VF: renamed from: d () void
-   private void method_41() {
-      List var1 = field_130 = new List("AngelChip Menu", 3);
-      if (field_138 == null) {
-         field_138 = "file:///c/" + this.getAppProperty("MIDlet-Name") + ".db";
+   private void initMainUi() {
+      List var1 = mainMenuList = new List("AngelChip Menu", 3);
+      if (backupDirectory == null) {
+         backupDirectory = "file:///c/" + this.getAppProperty("MIDlet-Name") + ".db";
       }
 
       String var3;
       for (int var2 = 0; (var3 = this.getAppProperty(String.valueOf(var2))) != null; var2++) {
          MidletInfo var4 = MidletInfo.getInstance(var3);
-         field_133[var2] = var4;
+         midletInfoList[var2] = var4;
          var1.append(var4.name, var4.icon);
       }
 
-      field_132 = new lib.MIDlet[field_130.size()];
+      runningMidlets = new lib.MIDlet[mainMenuList.size()];
       var1.addCommand(new Command("Chạy ứng dụng", 1, 0));
       var1.addCommand(new Command("Dừng ứng dụng", 1, 1));
       var1.addCommand(new Command("Thu nhỏ", 1, 5));
@@ -271,36 +217,34 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
       var1.addCommand(new Command("Cài đặt cơ bản", 1, 3));
       var1.addCommand(new Command("Thoát", 7, 2));
       var1.setCommandListener(this);
-      field_128.setCurrent(field_130);
-      if (field_139 != null) {
-         method_45();
+      mainDisplay.setCurrent(mainMenuList);
+      if (bgImagePath != null) {
+         loadBackgroundImage();
       }
    }
-
-   // $VF: renamed from: run () void
    public void run() {
-      if (field_143 >= 0) {
+      if (threadActionCode >= 0) {
          try {
             lib.MIDlet var2;
             MidletInfo var7;
-            if ((var2 = (var7 = field_133[field_143]).newInstance()) != null) {
-               field_132[field_143] = var2;
-               field_130.set(field_143, var7.name, MidletInfo.runimg(var7.icon));
+            if ((var2 = (var7 = midletInfoList[threadActionCode]).newInstance()) != null) {
+               runningMidlets[threadActionCode] = var2;
+               mainMenuList.set(threadActionCode, var7.name, MidletInfo.runimg(var7.icon));
                var2.start();
             }
          } catch (Throwable var3) {
             this.showError(var3, this);
          }
 
-         this.field_142 = true;
-      } else if (field_143 == -1) {
+         this.firstTimeRun = true;
+      } else if (threadActionCode == -1) {
          try {
-            Thread.sleep(field_140);
+            Thread.sleep(sleepIntervalMs);
 
-            for (int var1 = 0; var1 < field_132.length; var1++) {
-               if (field_132[var1] != null) {
+            for (int var1 = 0; var1 < runningMidlets.length; var1++) {
+               if (runningMidlets[var1] != null) {
                   try {
-                     field_132[var1].notifyDestroyed();
+                     runningMidlets[var1].notifyDestroyed();
                   } catch (Throwable var4) {
                   }
                }
@@ -310,10 +254,10 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
          } catch (Exception var5) {
          }
       } else {
-         if (field_141 > 0L) {
+         if (ramRecoveryIntervalMs > 0L) {
             while (true) {
                try {
-                  Thread.sleep(field_141);
+                  Thread.sleep(ramRecoveryIntervalMs);
                   System.gc();
                } catch (Exception var6) {
                   break;
@@ -324,25 +268,23 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
    }
 
    public void showError(Throwable var1, Object var2) {
-      field_122 = var1;
+      lastError = var1;
       showError(var2 + ": " + var1.toString());
    }
 
    public static void showError(String var0) {
-      if (System.currentTimeMillis() - field_126 > 1500L) {
-         field_126 = System.currentTimeMillis();
-         field_125.setTimeout(-2);
-         field_125.setString(var0);
-         field_128.setCurrent(field_125, (Displayable)(field_128.getCurrent() instanceof Alert ? field_130 : field_128.getCurrent()));
+      if (System.currentTimeMillis() - errorTimestamp > 1500L) {
+         errorTimestamp = System.currentTimeMillis();
+         infoAlert.setTimeout(-2);
+         infoAlert.setString(var0);
+         mainDisplay.setCurrent(infoAlert, (Displayable)(mainDisplay.getCurrent() instanceof Alert ? mainMenuList : mainDisplay.getCurrent()));
       }
    }
-
-   // $VF: renamed from: e () void
-   private static void method_42() {
+   private static void createBackupArchive() {
       FileConnection var0 = null;
 
       try {
-         var0 = (FileConnection)Connector.open(field_138, 2);
+         var0 = (FileConnection)Connector.open(backupDirectory, 2);
 
          try {
             var0.truncate(0L);
@@ -402,11 +344,9 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
          }
       }
    }
-
-   // $VF: renamed from: f () void
-   private static void method_43() {
+   private static void restoreBackupArchive() {
       byte[] var0;
-      if ((var0 = method_44(field_138)) != null) {
+      if ((var0 = showPromptAlert(backupDirectory)) != null) {
          try {
             DataInputStream var7 = new DataInputStream(new ByteArrayInputStream(var0));
             byte[] var1 = new byte[0];
@@ -446,7 +386,7 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
       }
    }
 
-   private static byte[] method_44(String var0) {
+   private static byte[] showPromptAlert(String var0) {
       FileConnection var7;
       try {
          var7 = (FileConnection)Connector.open(var0, 1);
@@ -475,31 +415,29 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
 
    public void itemStateChanged(Item var1) {
       try {
-         Form var2 = (Form)field_128.getCurrent();
+         Form var2 = (Form)mainDisplay.getCurrent();
          Gauge var4;
          if ((var4 = (Gauge)var1).getMaxValue() > 10) {
-            field_127 = var4.getValue();
-            ((Gauge)var2.get(1)).setValue(field_127 / 10);
+            screenLightLevel = var4.getValue();
+            ((Gauge)var2.get(1)).setValue(screenLightLevel / 10);
          } else {
-            field_127 = var4.getValue() * 10;
-            ((Gauge)var2.get(0)).setValue(field_127);
+            screenLightLevel = var4.getValue() * 10;
+            ((Gauge)var2.get(0)).setValue(screenLightLevel);
          }
 
-         DeviceControl.setLights(0, field_127);
+         DeviceControl.setLights(0, screenLightLevel);
       } catch (Throwable var3) {
       }
    }
-
-   // $VF: renamed from: g () void
-   private static void method_45() {
+   private static void loadBackgroundImage() {
       Canvas.buff = null;
       Canvas.image = null;
       System.gc();
-      if (field_139 != null && field_139.length() > 0) {
+      if (bgImagePath != null && bgImagePath.length() > 0) {
          Image var0 = null;
-         if (!field_139.startsWith("/")) {
+         if (!bgImagePath.startsWith("/")) {
             byte[] var1;
-            if ((var1 = method_44(field_139)) == null) {
+            if ((var1 = showPromptAlert(bgImagePath)) == null) {
                return;
             }
 
@@ -509,7 +447,7 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
             }
          } else {
             try {
-               var0 = Image.createImage(field_139);
+               var0 = Image.createImage(bgImagePath);
             } catch (Throwable var5) {
             }
          }
@@ -519,7 +457,7 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
             int var2 = var0.getHeight();
             int[] var3 = new int[var8 * var2];
             var0.getRGB(var3, 0, var8, 0, 0, var8, var2);
-            int var7 = field_144 << 24 | 16777215;
+            int var7 = bgOpacity << 24 | 16777215;
 
             for (int var4 = var3.length - 1; var4 >= 0; var4--) {
                var3[var4] &= var7;
@@ -532,39 +470,39 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
    }
 
    public void destroy(lib.MIDlet var1) {
-      field_128.setCurrent(field_130);
+      mainDisplay.setCurrent(mainMenuList);
       lib.Display.midlets.remove(var1);
       int var2 = 0;
 
-      while (var2 < field_132.length && var1 != field_132[var2]) {
+      while (var2 < runningMidlets.length && var1 != runningMidlets[var2]) {
          var2++;
       }
 
-      field_132[var2] = null;
-      MidletInfo var3 = field_133[var2];
-      field_130.set(var2, var3.name, var3.icon);
-      field_129 = field_130;
+      runningMidlets[var2] = null;
+      MidletInfo var3 = midletInfoList[var2];
+      mainMenuList.set(var2, var3.name, var3.icon);
+      suspendedDisplayable = mainMenuList;
       var3.destroy(var1);
       System.gc();
    }
 
    public void pause() {
-      if (field_128.getCurrent() != null) {
-         field_129 = field_128.getCurrent();
+      if (mainDisplay.getCurrent() != null) {
+         suspendedDisplayable = mainDisplay.getCurrent();
       }
 
-      field_128.setCurrent(field_130);
+      mainDisplay.setCurrent(mainMenuList);
    }
 
    public void resume() {
-      field_128.setCurrent(field_129);
+      mainDisplay.setCurrent(suspendedDisplayable);
    }
 
    public MrQuyet() {
-      this.method_47();
+      this.saveSettingsRecord();
 
       try {
-         DeviceControl.setLights(0, field_127);
+         DeviceControl.setLights(0, screenLightLevel);
       } catch (Throwable var1) {
       }
    }
@@ -580,36 +518,36 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
 
    public void commandAction(Command var1, Displayable var2) {
       label241: {
-         int var3 = field_130 == null ? 0 : field_130.getSelectedIndex();
+         int var3 = mainMenuList == null ? 0 : mainMenuList.getSelectedIndex();
          switch (var1.getPriority()) {
             case 0:
-               if (var2 == field_130) {
-                  if (var3 < 0 || var3 >= field_132.length) {
+               if (var2 == mainMenuList) {
+                  if (var3 < 0 || var3 >= runningMidlets.length) {
                      return;
                   }
 
-                  if (field_132[var3] == null) {
-                     if (this.field_142) {
-                        field_143 = var3;
-                        this.field_142 = false;
+                  if (runningMidlets[var3] == null) {
+                     if (this.firstTimeRun) {
+                        threadActionCode = var3;
+                        this.firstTimeRun = false;
                         new Thread(this).start();
                      }
 
                      return;
                   }
 
-                  field_132[var3].showDisplay();
+                  runningMidlets[var3].showDisplay();
                }
                break;
             case 1:
-               if (var2 == field_130) {
+               if (var2 == mainMenuList) {
                   int var20 = var3;
-                  if (var3 < 0 || var3 >= field_132.length || field_132[var3] == null) {
+                  if (var3 < 0 || var3 >= runningMidlets.length || runningMidlets[var3] == null) {
                      return;
                   }
 
                   try {
-                     field_132[var20].notifyDestroyed();
+                     runningMidlets[var20].notifyDestroyed();
                   } catch (Exception var7) {
                      this.showError(var7, this);
                      return;
@@ -617,10 +555,10 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
                }
                break;
             case 2:
-               for (int var13 = 0; var13 < field_132.length; var13++) {
-                  if (field_132[var13] != null) {
+               for (int var13 = 0; var13 < runningMidlets.length; var13++) {
+                  if (runningMidlets[var13] != null) {
                      try {
-                        field_132[var13].notifyDestroyed();
+                        runningMidlets[var13].notifyDestroyed();
                      } catch (Throwable var6) {
                      }
                   }
@@ -634,12 +572,12 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
                var12.addCommand(new Command("Lưu", 4, 9));
                var12.append(new TextField("Phím thu nhỏ:", String.valueOf(Canvas.menukey), 10, 2));
                var12.append(new TextField("Thời gian đáp ứng:", String.valueOf(Canvas.waittime), 10, 2));
-               var12.append(new TextField("Bấm giờ ngủ:", String.valueOf(field_140 / 1000L), 12, 2));
+               var12.append(new TextField("Bấm giờ ngủ:", String.valueOf(sleepIntervalMs / 1000L), 12, 2));
                var12.append(new TextField("Cỡ icon (rộng * cao):", MidletInfo.iconwidth + "*" + MidletInfo.iconheight, 12, 0));
-               var12.append(new TextField("Khoảng RAM được phục hồi:", String.valueOf(field_141), 12, 2));
-               var12.append(new TextField("Độ trong suốt (1-255):", String.valueOf(field_144), 3, 2));
-               var12.append(new TextField("Đường dẫn hình nền:", String.valueOf(field_139), 256, 0));
-               var12.append(new TextField("Đường dẫn sao lưu:", field_138, 256, 0));
+               var12.append(new TextField("Khoảng RAM được phục hồi:", String.valueOf(ramRecoveryIntervalMs), 12, 2));
+               var12.append(new TextField("Độ trong suốt (1-255):", String.valueOf(bgOpacity), 3, 2));
+               var12.append(new TextField("Đường dẫn hình nền:", String.valueOf(bgImagePath), 256, 0));
+               var12.append(new TextField("Đường dẫn sao lưu:", backupDirectory, 256, 0));
                var12.append(new TextField("Mã truy cập:", "", 20, 0));
                var12.append(new TextField("Phím chụp màn hình:", String.valueOf(Canvas.jiekey), 10, 2));
                var12.append(new TextField("Thời gian chụp:", String.valueOf(Canvas.jietime), 10, 2));
@@ -649,80 +587,80 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
                var12.addCommand(new Command("Nhập khẩu sao lưu", 4, 7));
                var12.addCommand(new Command("Thư mục lưu", 4, 17));
                var12.setCommandListener(this);
-               field_128.setCurrent(var12);
+               mainDisplay.setCurrent(var12);
                return;
             case 4:
-               this.method_35();
+               this.showRamOptionsMenu();
                return;
             case 5:
-               field_128.setCurrent(null);
+               mainDisplay.setCurrent(null);
                this.notifyPaused();
                return;
             case 6:
-               method_42();
+               createBackupArchive();
                return;
             case 7:
-               method_43();
+               restoreBackupArchive();
                return;
             case 8:
                Form var11;
                (var11 = new Form("Chỉnh đèn màn hình")).setCommandListener(this);
-               var11.append(new Gauge("Độ sáng", true, 100, field_127));
-               var11.append(new Gauge("Độ sáng", true, 10, field_127 / 10));
+               var11.append(new Gauge("Độ sáng", true, 100, screenLightLevel));
+               var11.append(new Gauge("Độ sáng", true, 10, screenLightLevel / 10));
                var11.setItemStateListener(this);
                var11.addCommand(new Command("Quay lại", 2, 10));
                var11.addCommand(new Command("Lưu", 4, 24));
-               field_128.setCurrent(var11);
+               mainDisplay.setCurrent(var11);
                return;
             case 9:
                Form var10;
-               Canvas.menukey = method_39(method_38(var10 = (Form)var2, 0), 42);
-               Canvas.waittime = method_40(method_38(var10, 1), 500L);
-               field_140 = method_40(method_38(var10, 2).concat("000"), 300000L);
+               Canvas.menukey = parseStringToInt(getTextFieldValue(var10 = (Form)var2, 0), 42);
+               Canvas.waittime = parseStringToLong(getTextFieldValue(var10, 1), 500L);
+               sleepIntervalMs = parseStringToLong(getTextFieldValue(var10, 2).concat("000"), 300000L);
                String var17;
-               if ((var3 = (var17 = method_38(var10, 3)).indexOf(42)) > 0) {
-                  MidletInfo.iconwidth = method_39(var17.substring(0, var3++), 20);
-                  MidletInfo.iconheight = method_39(var17.substring(var3), 20);
+               if ((var3 = (var17 = getTextFieldValue(var10, 3)).indexOf(42)) > 0) {
+                  MidletInfo.iconwidth = parseStringToInt(var17.substring(0, var3++), 20);
+                  MidletInfo.iconheight = parseStringToInt(var17.substring(var3), 20);
 
-                  for (int var18 = 0; var18 < field_132.length; var18++) {
+                  for (int var18 = 0; var18 < runningMidlets.length; var18++) {
                      MidletInfo var25;
-                     (var25 = field_133[var18]).updateIcon();
-                     field_130.set(var18, var25.name, field_132[var18] == null ? var25.icon : MidletInfo.runimg(var25.icon));
+                     (var25 = midletInfoList[var18]).updateIcon();
+                     mainMenuList.set(var18, var25.name, runningMidlets[var18] == null ? var25.icon : MidletInfo.runimg(var25.icon));
                   }
                }
 
-               String var19 = field_139;
-               var3 = field_144;
-               field_141 = method_40(method_38(var10, 4), 5000L);
-               field_144 = method_39(method_38(var10, 5), 100);
-               field_139 = method_38(var10, 6);
-               field_138 = method_38(var10, 7);
-               field_137 = method_38(var10, 8);
-               Canvas.jiekey = method_39(method_38(var10, 9), -10);
-               Canvas.jietime = (long)method_39(method_38(var10, 10), 200);
-               Canvas.savelevel = method_39(method_38(var10, 11), 1);
-               Canvas.savepath = method_38(var10, 12);
-               method_46();
+               String var19 = bgImagePath;
+               var3 = bgOpacity;
+               ramRecoveryIntervalMs = parseStringToLong(getTextFieldValue(var10, 4), 5000L);
+               bgOpacity = parseStringToInt(getTextFieldValue(var10, 5), 100);
+               bgImagePath = getTextFieldValue(var10, 6);
+               backupDirectory = getTextFieldValue(var10, 7);
+               securityPassword = getTextFieldValue(var10, 8);
+               Canvas.jiekey = parseStringToInt(getTextFieldValue(var10, 9), -10);
+               Canvas.jietime = (long)parseStringToInt(getTextFieldValue(var10, 10), 200);
+               Canvas.savelevel = parseStringToInt(getTextFieldValue(var10, 11), 1);
+               Canvas.savepath = getTextFieldValue(var10, 12);
+               initApp();
                var10.deleteAll();
-               if (field_139 != null && field_139.length() > 1 && !field_139.equals(var19) || var3 != field_144) {
-                  method_45();
+               if (bgImagePath != null && bgImagePath.length() > 1 && !bgImagePath.equals(var19) || var3 != bgOpacity) {
+                  loadBackgroundImage();
                   return;
                }
                break;
             case 10:
-               field_124 = null;
-               field_123 = null;
-               field_128.setCurrent(field_130);
+               currentSubMenuDisplayable = null;
+               callerDisplayable = null;
+               mainDisplay.setCurrent(mainMenuList);
                return;
             case 11:
                System.gc();
-               this.method_35();
+               this.showRamOptionsMenu();
                return;
             case 12:
                Form var9;
-               if (method_38(var9 = (Form)var2, 0).equals(field_137)) {
+               if (getTextFieldValue(var9 = (Form)var2, 0).equals(securityPassword)) {
                   var9.deleteAll();
-                  this.method_41();
+                  this.initMainUi();
                   return;
                }
 
@@ -738,17 +676,17 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
             case 16:
                return;
             case 17:
-               this.method_34();
+               this.showFolderMenu();
                return;
             case 18:
-               this.field_121 = -1;
-               this.method_36("", "");
+               this.selectedSubMenuIndex = -1;
+               this.showEditEntryForm("", "");
                return;
             case 19:
                List var16 = (List)var2;
 
                try {
-                  field_134.remove(var16.getString(var16.getSelectedIndex()));
+                  networkRedirectMap.remove(var16.getString(var16.getSelectedIndex()));
                   var16.delete(var16.getSelectedIndex());
                   return;
                } catch (Exception var5) {
@@ -758,82 +696,80 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
                List var15 = (List)var2;
 
                try {
-                  this.field_121 = var15.getSelectedIndex();
-                  this.method_36(var15.getString(this.field_121), (String)field_134.get(var15.getString(this.field_121)));
+                  this.selectedSubMenuIndex = var15.getSelectedIndex();
+                  this.showEditEntryForm(var15.getString(this.selectedSubMenuIndex), (String)networkRedirectMap.get(var15.getString(this.selectedSubMenuIndex)));
                   return;
                } catch (Exception var4) {
                   return;
                }
             case 21:
-               method_37();
+               saveRedirectMapRecord();
                return;
             case 22:
                Form var21 = (Form)var2;
-               List var8 = (List)field_124;
+               List var8 = (List)currentSubMenuDisplayable;
                String var14 = ((TextField)var21.get(0)).getString();
                String var22 = ((TextField)var21.get(1)).getString();
-               if (this.field_121 >= 0) {
-                  field_134.remove(var8.getString(this.field_121));
-                  var8.set(this.field_121, var14, null);
+               if (this.selectedSubMenuIndex >= 0) {
+                  networkRedirectMap.remove(var8.getString(this.selectedSubMenuIndex));
+                  var8.set(this.selectedSubMenuIndex, var14, null);
                } else {
                   var8.append(var14, null);
                }
 
-               field_134.put(var14, var22);
+               networkRedirectMap.put(var14, var22);
             case 23:
                break label241;
             case 24:
-               method_46();
+               initApp();
                return;
             case 25:
-               if (this.field_135 != null) {
-                  this.field_135.interrupt();
-                  this.field_135 = null;
+               if (this.ramRecoveryThread != null) {
+                  this.ramRecoveryThread.interrupt();
+                  this.ramRecoveryThread = null;
                } else {
-                  field_143 = -1;
-                  (this.field_135 = new Thread(this)).start();
+                  threadActionCode = -1;
+                  (this.ramRecoveryThread = new Thread(this)).start();
                }
 
-               this.method_35();
+               this.showRamOptionsMenu();
                return;
             case 26:
-               field_128.setCurrent(field_123);
+               mainDisplay.setCurrent(callerDisplayable);
                return;
             case 27:
-               if (this.field_136 != null) {
-                  this.field_136.interrupt();
-                  this.field_136 = null;
+               if (this.sleepModeThread != null) {
+                  this.sleepModeThread.interrupt();
+                  this.sleepModeThread = null;
                } else {
-                  field_143 = -2;
-                  (this.field_136 = new Thread(this)).start();
+                  threadActionCode = -2;
+                  (this.sleepModeThread = new Thread(this)).start();
                }
 
-               this.method_35();
+               this.showRamOptionsMenu();
          }
 
          return;
       }
 
-      field_128.setCurrent(field_124);
+      mainDisplay.setCurrent(currentSubMenuDisplayable);
    }
-
-   // $VF: renamed from: h () void
-   private static void method_46() {
+   private static void initApp() {
       try {
          RecordStore var0 = RecordStore.openRecordStore("MrQuyet_rms_setting", true);
          ByteArrayOutputStream var1;
          DataOutputStream var2;
          (var2 = new DataOutputStream(var1 = new ByteArrayOutputStream())).writeInt(Canvas.menukey);
          var2.writeInt((int)Canvas.waittime);
-         var2.writeUTF(field_137);
-         var2.writeUTF(field_138);
-         var2.writeShort(field_127);
-         var2.writeLong(field_140);
-         var2.writeUTF(field_139);
-         var2.writeShort(field_144);
+         var2.writeUTF(securityPassword);
+         var2.writeUTF(backupDirectory);
+         var2.writeShort(screenLightLevel);
+         var2.writeLong(sleepIntervalMs);
+         var2.writeUTF(bgImagePath);
+         var2.writeShort(bgOpacity);
          var2.writeShort(MidletInfo.iconwidth);
          var2.writeShort(MidletInfo.iconheight);
-         var2.writeLong(field_141);
+         var2.writeLong(ramRecoveryIntervalMs);
          var2.writeInt(Canvas.jiekey);
          var2.writeInt((int)Canvas.jietime);
          var2.writeByte(Canvas.savelevel);
@@ -851,15 +787,13 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
          lib.Display.mc.showError(var3, lib.Display.mc);
       }
 
-      field_128.setCurrent(field_130);
+      mainDisplay.setCurrent(mainMenuList);
    }
-
-   // $VF: renamed from: i () void
-   private void method_47() {
+   private void saveSettingsRecord() {
       lib.Display.mc = this;
       lib.MIDlet.mid = this;
-      lib.Display.d = field_128 = Display.getDisplay(this);
-      field_125 = new Alert("[!] Quyetdaik [!]", "", null, AlertType.INFO);
+      lib.Display.d = mainDisplay = Display.getDisplay(this);
+      infoAlert = new Alert("[!] Quyetdaik [!]", "", null, AlertType.INFO);
 
       try {
          RecordStore var1;
@@ -869,7 +803,7 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
 
             while (true) {
                try {
-                  field_134.put(var7.readUTF(), var7.readUTF());
+                  networkRedirectMap.put(var7.readUTF(), var7.readUTF());
                } catch (Exception var4) {
                   var7.close();
                   break;
@@ -879,7 +813,7 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
 
          var1.closeRecordStore();
       } catch (Exception var5) {
-         field_134.put("sms://106*", "sms://10086");
+         networkRedirectMap.put("sms://106*", "sms://10086");
       }
 
       try {
@@ -887,7 +821,7 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
          if ((var6 = RecordStore.openRecordStore("MrQuyet_rms_setting", false)).getNumRecords() > 0) {
             byte[] var8;
             if ((var8 = var6.getRecord(1)) == null) {
-               this.method_41();
+               this.initMainUi();
                var6.closeRecordStore();
                return;
             }
@@ -895,35 +829,35 @@ public class MrQuyet extends MIDlet implements Runnable, CommandListener, ItemSt
             DataInputStream var9;
             Canvas.menukey = (var9 = new DataInputStream(new ByteArrayInputStream(var8))).readInt();
             Canvas.waittime = (long)var9.readInt();
-            field_137 = var9.readUTF();
-            field_138 = var9.readUTF();
-            field_127 = var9.readShort();
-            field_140 = var9.readLong();
-            field_139 = var9.readUTF();
-            field_144 = var9.readShort();
+            securityPassword = var9.readUTF();
+            backupDirectory = var9.readUTF();
+            screenLightLevel = var9.readShort();
+            sleepIntervalMs = var9.readLong();
+            bgImagePath = var9.readUTF();
+            bgOpacity = var9.readShort();
             MidletInfo.iconwidth = var9.readShort();
             MidletInfo.iconheight = var9.readShort();
-            field_141 = var9.readLong();
+            ramRecoveryIntervalMs = var9.readLong();
             Canvas.jiekey = var9.readInt();
             Canvas.jietime = (long)var9.readInt();
             Canvas.savelevel = var9.readByte();
             Canvas.savepath = var9.readUTF();
             var9.close();
-            if (field_137.length() > 0) {
+            if (securityPassword.length() > 0) {
                Form var10;
                (var10 = new Form("Mật khẩu")).append(new TextField("Mã truy cập:", "", 20, 0));
                var10.setCommandListener(this);
                var10.addCommand(new Command("Xác nhận", 4, 12));
                var10.addCommand(new Command("Thoát", 7, 13));
-               field_128.setCurrent(var10);
+               mainDisplay.setCurrent(var10);
             } else {
-               this.method_41();
+               this.initMainUi();
             }
          }
 
          var6.closeRecordStore();
       } catch (Exception var3) {
-         this.method_41();
+         this.initMainUi();
       }
    }
 }

@@ -4,8 +4,7 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
 public abstract class Canvas extends javax.microedition.lcdui.Canvas {
-   // $VF: renamed from: a java.lang.Thread
-   private Thread field_107;
+   private Thread keyThread;
    public static int savelevel = 1;
    public static long waittime = 500L;
    public static long jietime = 200L;
@@ -15,8 +14,7 @@ public abstract class Canvas extends javax.microedition.lcdui.Canvas {
    protected static Image SaveImg;
    public static Image image;
    public static Image buff;
-   // $VF: renamed from: a boolean
-   boolean field_108;
+   boolean screenshotCapturePending;
 
    protected Canvas() {
       if (SaveImg == null) {
@@ -26,83 +24,81 @@ public abstract class Canvas extends javax.microedition.lcdui.Canvas {
       }
    }
 
-   public final void keyPressed(int var1) {
-      if (var1 == menukey) {
-         (this.field_107 = new class_1(this, var1)).start();
-      } else if (var1 == jiekey) {
-         this.field_108 = true;
-         (this.field_107 = new class_0(SaveImg, this, var1)).start();
+   public final void keyPressed(int keyCode) {
+      if (keyCode == menukey) {
+         (this.keyThread = new PauseKeyThread(this, keyCode)).start();
+      } else if (keyCode == jiekey) {
+         this.screenshotCapturePending = true;
+         (this.keyThread = new PngScreenshotThread(SaveImg, this, keyCode)).start();
       } else {
          try {
-            this.leyPressed(var1);
-         } catch (Throwable var2) {
-            Display.mc.showError(var2, this);
+            this.leyPressed(keyCode);
+         } catch (Throwable e) {
+            Display.mc.showError(e, this);
          }
       }
    }
 
-   public final void keyReleased(int var1) {
-      if ((var1 == menukey || var1 == jiekey) && this.field_107 != null) {
-         this.field_107.interrupt();
+   public final void keyReleased(int keyCode) {
+      if ((keyCode == menukey || keyCode == jiekey) && this.keyThread != null) {
+         this.keyThread.interrupt();
       } else {
          try {
-            this.leyReleased(var1);
-         } catch (Throwable var2) {
-            Display.mc.showError(var2, this);
+            this.leyReleased(keyCode);
+         } catch (Throwable e) {
+            Display.mc.showError(e, this);
          }
       }
    }
 
-   public final void paint(Graphics var1) {
+   public final void paint(Graphics g) {
       try {
-         if (this.field_108) {
-            this.method_31(var1);
+         if (this.screenshotCapturePending) {
+            this.renderCanvasWithOverlay(g);
             return;
          }
 
-         this.method_31(SaveImg.getGraphics());
-      } catch (Throwable var2) {
+         this.renderCanvasWithOverlay(SaveImg.getGraphics());
+      } catch (Throwable e) {
       }
 
-      var1.drawImage(SaveImg, 0, 0, 20);
+      g.drawImage(SaveImg, 0, 0, 20);
    }
 
-   // $VF: renamed from: a (javax.microedition.lcdui.Graphics) void
-   private void method_31(Graphics var1) {
+   private void renderCanvasWithOverlay(Graphics g) {
       try {
          if (image != null) {
-            int var2 = super.getWidth();
-            int var3 = super.getHeight();
-            if (buff == null || buff.getHeight() != var3) {
-               buff = Image.createImage(var2, var3);
+            int width = super.getWidth();
+            int height = super.getHeight();
+            if (buff == null || buff.getHeight() != height) {
+               buff = Image.createImage(width, height);
             }
 
             this.PAINT(buff.getGraphics());
-            var1.translate(-var1.getTranslateX(), -var1.getTranslateY());
-            var1.setClip(0, 0, var2, var3);
-            var1.drawImage(buff, 0, 0, 20);
-            var1.drawImage(image, var2 >> 1, var3 >> 1, 3);
+            g.translate(-g.getTranslateX(), -g.getTranslateY());
+            g.setClip(0, 0, width, height);
+            g.drawImage(buff, 0, 0, 20);
+            g.drawImage(image, width >> 1, height >> 1, 3);
             return;
          }
 
          buff = null;
-         this.PAINT(var1);
-      } catch (Throwable var4) {
-         Display.mc.showError(var4, this);
+         this.PAINT(g);
+      } catch (Throwable e) {
+         Display.mc.showError(e, this);
       }
    }
 
-   protected void leyPressed(int var1) {
+   protected void leyPressed(int keyCode) {
    }
 
-   protected void PAINT(Graphics var1) {
+   protected void PAINT(Graphics g) {
    }
 
-   protected void leyReleased(int var1) {
+   protected void leyReleased(int keyCode) {
    }
 
-   // $VF: renamed from: a (lib.Canvas, java.lang.Thread) java.lang.Thread
-   static Thread method_32(Canvas var0, Thread var1) {
-      return var0.field_107 = null;
+   void resetKeyThread() {
+      this.keyThread = null;
    }
 }

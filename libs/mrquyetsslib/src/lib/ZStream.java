@@ -1,30 +1,16 @@
 package lib;
-
-// $VF: renamed from: lib.a
-final class class_5 {
-   // $VF: renamed from: a byte[]
-   public byte[] field_97;
-   // $VF: renamed from: a int
-   public int field_98;
-   // $VF: renamed from: b int
-   public int field_99;
-   // $VF: renamed from: a long
-   public long field_100;
-   // $VF: renamed from: b byte[]
-   public byte[] field_101;
-   // $VF: renamed from: c int
-   public int field_102;
-   // $VF: renamed from: d int
-   public int field_103;
-   // $VF: renamed from: b long
-   public long field_104;
-   // $VF: renamed from: a lib.b
-   class_4 field_105;
-   // $VF: renamed from: c long
-   public long field_106;
-
-   // $VF: renamed from: a (long, byte[], int, int) long
-   static long method_28(long var0, byte[] var2, int var3, int var4) {
+final class ZStream {
+   public byte[] next_in;
+   public int next_in_index;
+   public int avail_in;
+   public long total_in;
+   public byte[] next_out;
+   public int next_out_index;
+   public int avail_out;
+   public long total_out;
+   Deflate dstate;
+   public long adler;
+   static long computeAdler32(long var0, byte[] var2, int var3, int var4) {
       if (var2 == null) {
          return 1L;
       } else {
@@ -82,28 +68,24 @@ final class class_5 {
          return var7 << 16 | var5;
       }
    }
-
-   // $VF: renamed from: a (int) int
-   public final int method_29(int var1) {
-      return this.field_105 == null ? -2 : this.field_105.method_27(this, var1);
+   public final int deflate(int var1) {
+      return this.dstate == null ? -2 : this.dstate.deflate(this, var1);
    }
-
-   // $VF: renamed from: a () void
-   final void method_30() {
-      int var1 = this.field_105.field_46;
-      if (this.field_105.field_46 > this.field_103) {
-         var1 = this.field_103;
+   final void flush_pending() {
+      int var1 = this.dstate.pending;
+      if (this.dstate.pending > this.avail_out) {
+         var1 = this.avail_out;
       }
 
       if (var1 != 0) {
-         System.arraycopy(this.field_105.field_43, this.field_105.field_45, this.field_101, this.field_102, var1);
-         this.field_102 += var1;
-         this.field_105.field_45 += var1;
-         this.field_104 += (long)var1;
-         this.field_103 -= var1;
-         this.field_105.field_46 -= var1;
-         if (this.field_105.field_46 == 0) {
-            this.field_105.field_45 = 0;
+         System.arraycopy(this.dstate.pending_buf, this.dstate.pending_out, this.next_out, this.next_out_index, var1);
+         this.next_out_index += var1;
+         this.dstate.pending_out += var1;
+         this.total_out += (long)var1;
+         this.avail_out -= var1;
+         this.dstate.pending -= var1;
+         if (this.dstate.pending == 0) {
+            this.dstate.pending_out = 0;
          }
       }
    }

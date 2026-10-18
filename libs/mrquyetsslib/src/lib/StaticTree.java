@@ -1,9 +1,6 @@
 package lib;
-
-// $VF: renamed from: lib.c
-final class class_3 {
-   // $VF: renamed from: a short[]
-   static final short[] field_26 = new short[]{
+final class StaticTree {
+   static final short[] static_ltree = new short[]{
       12,
       8,
       140,
@@ -581,8 +578,7 @@ final class class_3 {
       227,
       8
    };
-   // $VF: renamed from: b short[]
-   static final short[] field_27 = new short[]{
+   static final short[] static_dtree = new short[]{
       0,
       5,
       16,
@@ -644,28 +640,20 @@ final class class_3 {
       23,
       5
    };
-   // $VF: renamed from: a lib.c
-   static class_3 field_28 = new class_3(field_26, class_2.field_15, 257, 286, 15);
-   // $VF: renamed from: b lib.c
-   static class_3 field_29 = new class_3(field_27, class_2.field_16, 0, 30, 15);
-   // $VF: renamed from: c lib.c
-   static class_3 field_30 = new class_3(null, class_2.field_17, 0, 19, 7);
-   // $VF: renamed from: c short[]
-   short[] field_31;
-   // $VF: renamed from: a int[]
-   int[] field_32;
-   // $VF: renamed from: a int
-   int field_33;
-   // $VF: renamed from: b int
-   int field_34;
-   // $VF: renamed from: c int
-   int field_35;
+   static StaticTree static_l_desc = new StaticTree(static_ltree, Tree.extra_lbits, 257, 286, 15);
+   static StaticTree static_d_desc = new StaticTree(static_dtree, Tree.extra_dbits, 0, 30, 15);
+   static StaticTree static_bl_desc = new StaticTree(null, Tree.extra_blbits, 0, 19, 7);
+   short[] static_tree;
+   int[] extra_bits;
+   int extra_base;
+   int elems;
+   int max_length;
 
-   private class_3(short[] var1, int[] var2, int var3, int var4, int var5) {
-      this.field_31 = var1;
-      this.field_32 = var2;
-      this.field_33 = var3;
-      this.field_34 = var4;
-      this.field_35 = var5;
+   private StaticTree(short[] var1, int[] var2, int var3, int var4, int var5) {
+      this.static_tree = var1;
+      this.extra_bits = var2;
+      this.extra_base = var3;
+      this.elems = var4;
+      this.max_length = var5;
    }
 }
