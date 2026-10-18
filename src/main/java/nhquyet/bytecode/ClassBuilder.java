@@ -179,6 +179,7 @@ public final class ClassBuilder {
             methods[3].attributes = new AttributeInfo[]{createClearsCode()};
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
 
         byteBufferA.reset();

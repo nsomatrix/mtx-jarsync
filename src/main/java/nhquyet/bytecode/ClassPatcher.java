@@ -18,7 +18,7 @@ public final class ClassPatcher {
     private int thisClassIndex;
     private int superClassIndex;
     private Vector constantPool;
-    private String originalSuperClassName;
+    private String currentPatchedClassName;
     private FieldInfo[] fields;
     private AttributeInfo[] attributes;
     private int[] interfaces;
@@ -124,9 +124,10 @@ public final class ClassPatcher {
             this.thisClassIndex = dis.readUnsignedShort();
             this.superClassIndex = dis.readUnsignedShort();
 
-            ConstantClassInfo superClass = (ConstantClassInfo) cp.elementAt(this.superClassIndex);
-            ConstantUtf8Info superClassName = (ConstantUtf8Info) cp.elementAt(superClass.nameIndex);
-            this.originalSuperClassName = (String) classReplacements.get(superClassName.value);
+            ConstantClassInfo thisClass = (ConstantClassInfo) cp.elementAt(this.thisClassIndex);
+            ConstantUtf8Info thisClassUtf8 = (ConstantUtf8Info) cp.elementAt(thisClass.nameIndex);
+            String rep = (String) classReplacements.get(thisClassUtf8.value);
+            this.currentPatchedClassName = (rep != null) ? rep : thisClassUtf8.value;
         } catch (Exception ignored) {
         }
     }
@@ -332,7 +333,9 @@ public final class ClassPatcher {
                 this.methods.addElement(clearsMethod);
 
                 midletClassCounter++;
-                patchedClasses.addElement(this.originalSuperClassName);
+                if (this.currentPatchedClassName != null) {
+                    patchedClasses.addElement(this.currentPatchedClassName);
+                }
             }
         } catch (Exception ignored) {
         }

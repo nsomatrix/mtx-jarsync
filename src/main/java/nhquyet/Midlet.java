@@ -617,8 +617,11 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
                     zos.putNextEntry(staticClassName + ".class");
                     zos.write(staticClass);
                     zos.closeEntry();
+                } else {
+                    System.err.println("[ClassBuilder] Warning: Failed to build synthetic class: " + staticClassName);
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                e.printStackTrace();
             }
             this.progressForm.delete(statusIdx);
         }
