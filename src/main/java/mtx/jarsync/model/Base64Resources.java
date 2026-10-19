@@ -10,6 +10,8 @@ import javax.microedition.lcdui.Image;
 public final class Base64Resources {
     private static Base64Resources instance;
     private static final Hashtable RESOURCES = new Hashtable();
+    private static final Hashtable VI_RESOURCES = new Hashtable();
+    private static String currentLanguage = "en";
     private static final byte[] BASE64_DECODE_TABLE = new byte[256];
 
     static {
@@ -41,6 +43,39 @@ public final class Base64Resources {
         RESOURCES.put("set", "Settings");
         RESOURCES.put("start", "Start Build");
         RESOURCES.put("view", "Application List");
+        RESOURCES.put("add_all", "Add All");
+        RESOURCES.put("save", "Save");
+        RESOURCES.put("add_item", "Add");
+
+        VI_RESOURCES.put("c", "Ch\u1ecdn t\u1ec7p tin");
+        VI_RESOURCES.put("d", "M\u1edf");
+        VI_RESOURCES.put("e", "Quay l\u1ea1i");
+        VI_RESOURCES.put("f", "Tho\u00e1t");
+        VI_RESOURCES.put("h", "Gh\u00e9p th\u00e0nh c\u00f4ng! ");
+        VI_RESOURCES.put("i", "C\u00f3 l\u1ed7i x\u1ea3y ra! ");
+        VI_RESOURCES.put("j", " T\u1eadp tin ");
+        VI_RESOURCES.put("k", " X\u1eed l\u00fd ");
+        VI_RESOURCES.put("n", "(MTX JarSync)");
+        VI_RESOURCES.put("o", "Xem ti\u1ebfn tr\u00ecnh");
+        VI_RESOURCES.put("add", "Th\u00eam v\u00e0o d.s\u00e1ch");
+        VI_RESOURCES.put("delete", "X\u00f3a");
+        VI_RESOURCES.put("icon", "file:///c/icon.png");
+        VI_RESOURCES.put("savedir", "file:///c/MultiMidlet/MtxJarSync.jar");
+        VI_RESOURCES.put("selectall", "Ch\u1ecdn t\u1ea5t c\u1ea3");
+        VI_RESOURCES.put("set", "C\u00e0i \u0111\u1eb7t");
+        VI_RESOURCES.put("start", "B\u1eaft \u0111\u1ea7u gh\u00e9p");
+        VI_RESOURCES.put("view", "D.s\u00e1ch \u1ee9ng d\u1ee5ng");
+        VI_RESOURCES.put("add_all", "Th\u00eam t\u1ea5t c\u1ea3");
+        VI_RESOURCES.put("save", "L\u01b0u");
+        VI_RESOURCES.put("add_item", "Th\u00eam");
+    }
+
+    public static void setLanguage(String lang) {
+        if (lang != null && lang.trim().toLowerCase().startsWith("vi")) {
+            currentLanguage = "vi";
+        } else {
+            currentLanguage = "en";
+        }
     }
 
     public static Base64Resources getInstance() {
@@ -64,7 +99,7 @@ public final class Base64Resources {
         String[] plainKeys = new String[]{"c", "d", "e", "f", "h", "i", "j", "k", "n", "o"};
         for (int i = 0; i < plainKeys.length; i++) {
             if (key.equals(plainKeys[i])) {
-                return (String) RESOURCES.get(key);
+                return get(key);
             }
         }
         try {
@@ -75,6 +110,12 @@ public final class Base64Resources {
     }
 
     public static String get(String key) {
+        if ("vi".equals(currentLanguage)) {
+            Object viVal = VI_RESOURCES.get(key);
+            if (viVal != null) {
+                return viVal.toString();
+            }
+        }
         Object val = RESOURCES.get(key);
         return val != null ? val.toString() : key;
     }

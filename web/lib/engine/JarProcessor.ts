@@ -27,6 +27,7 @@ export interface ReplicateOptions {
   featureMainPageList: boolean;
   featureNoExit: boolean;
   customIconBytes?: Uint8Array;
+  language?: 'en' | 'vi';
 }
 
 export interface SplitResult {
@@ -261,10 +262,13 @@ export class JarProcessor {
     mf += 'MicroEdition-Profile: MIDP-2.0\r\n';
     mf += 'MIDlet-Version: 2.5\r\n';
     mf += `MIDlet-Vendor: ${options.author || metadata.vendor || 'MTX'}\r\n`;
-    mf += `MIDlet-Name: ${options.appName || `${metadata.name} Multi`}\r\n`;
-    mf += `MIDlet-1: ${options.displayName || options.appName || `${metadata.name} Multi`},/mtx/mid.png,mtx.jarsync.runtime.MtxSwitcher\r\n`;
+    mf += `MIDlet-Name: ${options.appName || (options.language === 'vi' ? `${metadata.name} Đa ứng dụng` : `${metadata.name} Multi`)}\r\n`;
+    mf += `MIDlet-1: ${options.displayName || options.appName || (options.language === 'vi' ? `${metadata.name} Đa ứng dụng` : `${metadata.name} Multi`)},/mtx/mid.png,mtx.jarsync.runtime.MtxSwitcher\r\n`;
     if (options.featureNoExit) {
       mf += 'Nokia-MIDlet-no-exit: true\r\n';
+    }
+    if (options.language) {
+      mf += `Mtx-Language: ${options.language}\r\n`;
     }
     for (let i = 0; i < combinedMidletEntries.length; i++) {
       mf += `${i}: ${combinedMidletEntries[i]}\r\n`;
@@ -289,7 +293,8 @@ export class JarProcessor {
    */
   public static async splitJar(
     file: File,
-    onProgress?: (progress: number, status: string) => void
+    onProgress?: (progress: number, status: string) => void,
+    options?: { language?: 'en' | 'vi' }
   ): Promise<SplitResult[]> {
     onProgress?.(10, 'Reading archive manifest...');
     const arrayBuffer = await file.arrayBuffer();
@@ -398,7 +403,7 @@ export class JarProcessor {
       }
 
       // 4. Standalone direct-launch manifest with single sub-app entry
-      const standaloneManifest = [
+      const manifestLines = [
         'Manifest-Version: 1.0',
         `MicroEdition-Configuration: ${config}`,
         `MicroEdition-Profile: ${profile}`,
@@ -407,9 +412,13 @@ export class JarProcessor {
         `MIDlet-Vendor: ${vendor}`,
         `MIDlet-1: ${entry.title},/icon.png,mtx.jarsync.runtime.MtxSwitcher`,
         'Nokia-MIDlet-no-exit: true',
-        `0: ${entry.title},/icon.png,${entry.className},/${entry.iniFile}`,
-        ''
-      ].join('\r\n');
+      ];
+      if (options?.language) {
+        manifestLines.push(`Mtx-Language: ${options.language}`);
+      }
+      manifestLines.push(`0: ${entry.title},/icon.png,${entry.className},/${entry.iniFile}`);
+      manifestLines.push('');
+      const standaloneManifest = manifestLines.join('\r\n');
 
       singleZip.file('META-INF/MANIFEST.MF', standaloneManifest);
 
@@ -474,6 +483,7 @@ export class JarProcessor {
       appName?: string;
       displayName?: string;
       author?: string;
+      language?: 'en' | 'vi';
     },
     onProgress?: (percent: number, status: string) => void
   ): Promise<Blob> {
@@ -569,7 +579,10 @@ export class JarProcessor {
       combinedMidletEntries.push(`${e.title},/${e.icon},${e.className},/${e.iniFile}`);
     }
 
-    const appName = options?.appName || `MTX Multi (${selectedEntries.length}-in-1)`;
+    const defaultMergeName = options?.language === 'vi'
+      ? `MTX Tổng hợp (${selectedEntries.length}-trong-1)`
+      : `MTX Multi (${selectedEntries.length}-in-1)`;
+    const appName = options?.appName || defaultMergeName;
     const displayName = options?.displayName || appName;
     const author = options?.author || 'MTX JarSync';
 
@@ -581,6 +594,9 @@ export class JarProcessor {
     mf += `MIDlet-Name: ${appName}\r\n`;
     mf += `MIDlet-1: ${displayName},/mtx/mid.png,mtx.jarsync.runtime.MtxSwitcher\r\n`;
     mf += 'Nokia-MIDlet-no-exit: true\r\n';
+    if (options?.language) {
+      mf += `Mtx-Language: ${options.language}\r\n`;
+    }
     for (let i = 0; i < combinedMidletEntries.length; i++) {
       mf += `${i}: ${combinedMidletEntries[i]}\r\n`;
     }

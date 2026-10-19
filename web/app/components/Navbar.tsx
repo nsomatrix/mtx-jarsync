@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useTheme } from "../ThemeContext";
+import { useLanguage } from "../../lib/i18n/LanguageContext";
 import {
   Sun,
   Moon,
@@ -19,6 +20,7 @@ interface NavbarProps {
 
 export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
   const { theme, setTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
   const [showInfo, setShowInfo] = useState(false);
 
   return (
@@ -31,7 +33,7 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
               <Layers className="h-4 w-4" />
             </div>
             <span className="font-semibold text-sm tracking-tight text-neutral-900 dark:text-neutral-100 hidden sm:inline">
-              MTX JarSync
+              {t("app_title")}
             </span>
           </div>
 
@@ -46,7 +48,7 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
               }`}
             >
               <Copy className="h-3.5 w-3.5 shrink-0" />
-              <span>Replicate</span>
+              <span>{t("tab_replicate")}</span>
             </button>
             <button
               onClick={() => setActiveTab("split")}
@@ -57,19 +59,37 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
               }`}
             >
               <Scissors className="h-3.5 w-3.5 shrink-0" />
-              <span>Split</span>
+              <span>{t("tab_split")}</span>
             </button>
           </div>
 
-          {/* Theme Switcher & Info */}
-          <div className="flex items-center space-x-1 shrink-0">
-            <button
-              onClick={() => setShowInfo(true)}
-              className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 rounded-md transition"
-              title="About MTX JarSync"
-            >
-              <HelpCircle className="h-4 w-4" />
-            </button>
+          {/* Controls: Language, Theme & Info */}
+          <div className="flex items-center space-x-1.5 shrink-0">
+            {/* Language Switcher */}
+            <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800 text-[11px] font-semibold">
+              <button
+                onClick={() => setLanguage("en")}
+                className={`px-2 py-1 rounded-md transition ${
+                  language === "en"
+                    ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs"
+                    : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
+                }`}
+                title="English"
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLanguage("vi")}
+                className={`px-2 py-1 rounded-md transition ${
+                  language === "vi"
+                    ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs"
+                    : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
+                }`}
+                title="Tiếng Việt"
+              >
+                VI
+              </button>
+            </div>
 
             {/* Dark / Light Toggle */}
             <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800">
@@ -80,8 +100,8 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
                     ? "bg-neutral-800 text-white shadow-xs"
                     : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
                 }`}
-                title="Dark Mode"
-                aria-label="Dark Mode"
+                title={t("theme_dark")}
+                aria-label={t("theme_dark")}
               >
                 <Moon className="h-3.5 w-3.5" />
               </button>
@@ -92,12 +112,20 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
                     ? "bg-white text-neutral-900 shadow-xs"
                     : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
                 }`}
-                title="Light Mode"
-                aria-label="Light Mode"
+                title={t("theme_light")}
+                aria-label={t("theme_light")}
               >
                 <Sun className="h-3.5 w-3.5" />
               </button>
             </div>
+
+            <button
+              onClick={() => setShowInfo(true)}
+              className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 rounded-md transition"
+              title={t("info_btn_title")}
+            >
+              <HelpCircle className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </header>
@@ -114,25 +142,25 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
             </button>
 
             <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 mb-1.5">
-              J2ME Replication & Splitting Engine
+              {t("modal_title")}
             </h3>
             <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed mb-4">
-              100% in-browser JVM bytecode manipulation tool for retro Java MIDlet suites.
+              {t("modal_subtitle")}
             </p>
 
             <div className="space-y-3 text-xs text-neutral-700 dark:text-neutral-300">
               <div className="p-3.5 rounded-lg bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800">
                 <span className="font-semibold text-neutral-900 dark:text-neutral-100 block mb-1">
-                  1. Replicate (Multi-Instance Cloning)
+                  {t("modal_step1_title")}
                 </span>
-                Takes a single J2ME JAR and clones it into 2 to 26 independent instances with isolated package namespaces (<code className="font-mono text-neutral-800 dark:text-neutral-200">root (a)</code>, <code className="font-mono text-neutral-800 dark:text-neutral-200">b/</code>, <code className="font-mono text-neutral-800 dark:text-neutral-200">c/</code>...), isolated RecordStore storage, cloned static initializers (<code className="font-mono text-neutral-800 dark:text-neutral-200">&lt;clinit&gt;</code>), and an in-game switcher overlay.
+                {t("modal_step1_desc")}
               </div>
 
               <div className="p-3.5 rounded-lg bg-neutral-50 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800">
                 <span className="font-semibold text-neutral-900 dark:text-neutral-100 block mb-1">
-                  2. Split (Deconstruction)
+                  {t("modal_step2_title")}
                 </span>
-                Extracts an existing multi-account or combined JAR back into standalone single-app J2ME JARs by stripping namespace prefixes and restoring individual manifests.
+                {t("modal_step2_desc")}
               </div>
             </div>
 
@@ -141,7 +169,7 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
                 onClick={() => setShowInfo(false)}
                 className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition active:scale-95"
               >
-                Close
+                {t("close")}
               </button>
             </div>
           </div>

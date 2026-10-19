@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { JarProcessor, SplitResult } from "../../lib/engine/JarProcessor";
+import { useLanguage } from "../../lib/i18n/LanguageContext";
 import {
   Scissors,
   Download,
@@ -17,6 +18,7 @@ import {
 import JSZip from "jszip";
 
 export function SplitStudio() {
+  const { language, t } = useLanguage();
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -33,7 +35,7 @@ export function SplitStudio() {
     if (!files || files.length === 0) return;
     const file = files[0];
     if (!file.name.toLowerCase().endsWith(".jar")) {
-      setErrorMessage("Please select a valid .jar file.");
+      setErrorMessage(t("err_select_jar"));
       return;
     }
 
@@ -48,12 +50,12 @@ export function SplitStudio() {
       const results = await JarProcessor.splitJar(file, (pct, status) => {
         setProgress(pct);
         setStatusMessage(status);
-      });
+      }, { language });
       setSplitResults(results);
       setSelectedIndices(results.map((_, i) => i));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setErrorMessage(`Split failed: ${msg}`);
+      setErrorMessage(t("err_split_failed", { msg }));
     } finally {
       setIsProcessing(false);
     }
@@ -106,12 +108,19 @@ export function SplitStudio() {
     setIsMerging(true);
     setErrorMessage(null);
     try {
+      const isViet = language === "vi";
+      const baseName = sourceFile.name.replace(/\.[^/.]+$/, "");
+      const appName = isViet
+        ? `${baseName} (${selectedIndices.length}-trong-1)`
+        : `${baseName} (${selectedIndices.length}-in-1)`;
+
       const mergedBlob = await JarProcessor.mergeSubApps(
         sourceFile,
         selectedIndices,
         {
-          appName: `${sourceFile.name.replace(/\.[^/.]+$/, "")} (${selectedIndices.length}-in-1)`,
-          displayName: `${sourceFile.name.replace(/\.[^/.]+$/, "")} (${selectedIndices.length}-in-1)`,
+          appName,
+          displayName: appName,
+          language,
         },
         (pct, status) => {
           setProgress(pct);
@@ -121,14 +130,14 @@ export function SplitStudio() {
       const url = URL.createObjectURL(mergedBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${sourceFile.name.replace(/\.[^/.]+$/, "")}_merged_${selectedIndices.length}in1.jar`;
+      a.download = `${baseName}_merged_${selectedIndices.length}in1.jar`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setErrorMessage(`Merge failed: ${msg}`);
+      setErrorMessage(t("err_merge_failed", { msg }));
     } finally {
       setIsMerging(false);
     }
@@ -174,16 +183,16 @@ export function SplitStudio() {
             <Scissors className="h-5 w-5" />
           </div>
           <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-            Select a multi-game or replicated JAR to split
+            {t("split_drop_title")}
           </h3>
           <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 max-w-sm mx-auto leading-normal">
-            Extracts standalone single JARs that launch directly, or recombines sub-apps into customized merged JARs.
+            {t("split_drop_subtitle")}
           </p>
           <button
             type="button"
             className="mt-4 px-4 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition active:scale-95 shadow-xs"
           >
-            Browse File
+            {t("browse_file")}
           </button>
         </div>
       )}
@@ -194,7 +203,7 @@ export function SplitStudio() {
           <Loader2 className="h-5 w-5 text-neutral-700 dark:text-neutral-300 animate-spin mx-auto" />
           <div>
             <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 block">
-              {statusMessage || (isMerging ? "Merging selected apps..." : "Splitting games...")}
+              {statusMessage || (isMerging ? t("status_merging") : t("status_splitting"))}
             </span>
             <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">{progress}%</span>
           </div>
@@ -212,13 +221,13 @@ export function SplitStudio() {
         <div className="p-3.5 rounded-lg bg-red-50/80 dark:bg-neutral-900 border border-red-200 dark:border-red-900/50 text-red-900 dark:text-red-300 flex items-start space-x-2.5 text-xs animate-in fade-in duration-200">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
           <div className="flex-1">
-            <span className="font-semibold block text-red-950 dark:text-red-200">Error</span>
+            <span className="font-semibold block text-red-950 dark:text-red-200">{t("error_prefix")}</span>
             <p className="opacity-90">{errorMessage}</p>
             <button
               onClick={resetAll}
               className="mt-2 text-[11px] font-semibold underline text-neutral-700 dark:text-neutral-300"
             >
-              Choose another JAR
+              {t("error_choose_another")}
             </button>
           </div>
         </div>
@@ -234,10 +243,10 @@ export function SplitStudio() {
                 {sourceFile?.name} ({(sourceFile?.size ? sourceFile.size / 1024 : 0).toFixed(1)} KB)
               </span>
               <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5">
-                Extracted {splitResults.length} Sub-Applications
+                {t("split_extracted_title", { count: splitResults.length })}
               </h4>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                Single JARs launch directly without switcher menu. Select multiple to merge.
+                {t("split_extracted_desc")}
               </p>
             </div>
 
@@ -246,7 +255,7 @@ export function SplitStudio() {
                 onClick={resetAll}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition hover:bg-neutral-100 dark:hover:bg-neutral-900 shrink-0"
               >
-                Split Another
+                {t("split_another")}
               </button>
 
               {selectedIndices.length >= 2 && (
@@ -256,7 +265,7 @@ export function SplitStudio() {
                   className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-xs"
                 >
                   <Layers className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">Merge ({selectedIndices.length}-in-1)</span>
+                  <span className="truncate">{t("btn_merge", { count: selectedIndices.length })}</span>
                 </button>
               )}
 
@@ -265,7 +274,7 @@ export function SplitStudio() {
                 className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200/80 dark:hover:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-xs"
               >
                 <Archive className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Download All Standalones (.ZIP)</span>
+                <span className="truncate">{t("btn_download_all_zip")}</span>
               </button>
             </div>
           </div>
@@ -282,11 +291,12 @@ export function SplitStudio() {
                 <Square className="h-3.5 w-3.5" />
               )}
               <span>
-                {selectedIndices.length === splitResults.length ? "Deselect All" : "Select All"} ({selectedIndices.length}/{splitResults.length} selected)
+                {selectedIndices.length === splitResults.length ? t("deselect_all") : t("select_all")}{" "}
+                {t("selected_count", { selected: selectedIndices.length, total: splitResults.length })}
               </span>
             </button>
             <span className="text-[11px] font-mono">
-              Individual downloads open directly into the game
+              {t("direct_launch_hint")}
             </span>
           </div>
 
@@ -319,7 +329,7 @@ export function SplitStudio() {
                           <span className="text-[10px] text-neutral-400 dark:text-neutral-600">•</span>
                           <span className="inline-flex items-center space-x-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
                             <Zap className="h-2.5 w-2.5 shrink-0" />
-                            <span>Direct Launch</span>
+                            <span>{t("direct_launch_badge")}</span>
                           </span>
                         </div>
                       </div>
@@ -329,7 +339,7 @@ export function SplitStudio() {
                       type="button"
                       onClick={() => handleToggleSelect(idx)}
                       className="p-1 text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition shrink-0"
-                      title={isSelected ? "Deselect from merge" : "Select to merge"}
+                      title={isSelected ? t("tooltip_deselect_merge") : t("tooltip_select_merge")}
                     >
                       {isSelected ? (
                         <CheckSquare className="h-4 w-4 text-neutral-900 dark:text-neutral-100" />
@@ -344,7 +354,7 @@ export function SplitStudio() {
                     className="w-full py-1.5 px-2.5 rounded-lg text-xs font-medium bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200/80 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center space-x-1.5 transition active:scale-95"
                   >
                     <Download className="h-3.5 w-3.5" />
-                    <span>Download Standalone .JAR</span>
+                    <span>{t("btn_download_standalone")}</span>
                   </button>
                 </div>
               );

@@ -113,6 +113,13 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
     private boolean featureCustomCanvasUI;
 
     public Midlet() {
+        String lang = this.getAppProperty("Mtx-Language");
+        if (lang == null) lang = this.getAppProperty("MTX-Lang");
+        if (lang == null) lang = this.getAppProperty("Language");
+        if (lang != null && lang.trim().toLowerCase().startsWith("vi")) {
+            Base64Resources.setLanguage("vi");
+        }
+
         this.iconImage = Base64Resources.getImage('a');
         this.folderImage = Base64Resources.getImage('b');
 
@@ -140,7 +147,7 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
             this.midletSettingsForm.append(new TextField("Display Name " + i + ":", null, 20, 0));
         }
         this.midletSettingsForm.setCommandListener(this);
-        this.midletSettingsForm.addCommand(new Command("Add", 4, 1));
+        this.midletSettingsForm.addCommand(new Command(Base64Resources.get("add_item"), 4, 1));
         this.progressForm.setCommandListener(this);
 
         try {
@@ -183,7 +190,7 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
         this.fileBrowserDisplayable.addCommand(backCmd);
         this.appListDisplayable.addCommand(backCmd);
         this.settingsDisplayable.addCommand(backCmd);
-        this.settingsDisplayable.addCommand(new Command("Save", 4, 1));
+        this.settingsDisplayable.addCommand(new Command(Base64Resources.get("save"), 4, 1));
         this.settingsDisplayable.setCommandListener(this);
 
         this.settingsChoice.append("Enable Screenshot", null);
@@ -198,8 +205,8 @@ public class Midlet extends MIDlet implements Runnable, CommandListener {
         this.fileBrowserDisplayable.addCommand(new Command(Base64Resources.getString('f'), 7, 3));
         this.fileBrowserDisplayable.addCommand(new Command(Base64Resources.getString('o'), 5, 4));
         this.fileBrowserDisplayable.addCommand(new Command(Base64Resources.get("add"), 8, 5));
-        this.fileBrowserDisplayable.addCommand(new Command("Add All", 1, 6));
-        this.fileBrowserDisplayable.addCommand(new Command("Settings", 3, 7));
+        this.fileBrowserDisplayable.addCommand(new Command(Base64Resources.get("add_all"), 1, 6));
+        this.fileBrowserDisplayable.addCommand(new Command(Base64Resources.get("set"), 3, 7));
 
         this.appListDisplayable.addCommand(new Command(Base64Resources.get("start"), 1, 5));
         this.appListDisplayable.addCommand(new Command(Base64Resources.get("delete"), 3, 5));

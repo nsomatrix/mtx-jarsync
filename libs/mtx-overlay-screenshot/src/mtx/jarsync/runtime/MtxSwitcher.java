@@ -31,18 +31,19 @@ import lib.Canvas;
 import lib.MidControl;
 
 public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, ItemStateListener, MidControl {
+   private static boolean isVietnamese = false;
    private static List sharedSubMenu;
-   private static final Command cmdRamRecovery = new Command("RAM Recovery", 4, 11);
-   private static final Command cmdRamRecoveryOn = new Command("RAM Recovery (ON)", 4, 27);
-   private static final Command cmdRamRecoveryOff = new Command("RAM Recovery (OFF)", 4, 27);
-   private static final Command cmdBack = new Command("Back", 2, 10);
-   private static final Command cmdSleepModeOn = new Command("Sleep Mode (ON)", 4, 25);
-   private static final Command cmdSleepModeOff = new Command("Sleep Mode (OFF)", 4, 25);
-   private static final Command cmdBackSubMenu = new Command("Back", 2, 26);
-   private static final Command cmdSave = new Command("Save", 1, 21);
-   private static final Command cmdDelete = new Command("Delete", 1, 19);
-   private static final Command cmdEdit = new Command("Edit", 1, 20);
-   private static final Command cmdAddNew = new Command("Add New", 1, 18);
+   private static Command cmdRamRecovery;
+   private static Command cmdRamRecoveryOn;
+   private static Command cmdRamRecoveryOff;
+   private static Command cmdBack;
+   private static Command cmdSleepModeOn;
+   private static Command cmdSleepModeOff;
+   private static Command cmdBackSubMenu;
+   private static Command cmdSave;
+   private static Command cmdDelete;
+   private static Command cmdEdit;
+   private static Command cmdAddNew;
    private int selectedSubMenuIndex;
    private static Throwable lastError;
    private static Displayable callerDisplayable;
@@ -68,13 +69,54 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
    private boolean firstTimeRun = true;
    private static int threadActionCode;
    private static int bgOpacity = 100;
+
+   private void checkLanguage() {
+      String lang = this.getAppProperty("Mtx-Language");
+      if (lang == null) lang = this.getAppProperty("MTX-Lang");
+      if (lang == null) lang = this.getAppProperty("Language");
+      if (lang != null && lang.trim().toLowerCase().startsWith("vi")) {
+         isVietnamese = true;
+      }
+   }
+
+   private void initCommands() {
+      if (cmdBack != null) return;
+      if (isVietnamese) {
+         cmdRamRecovery = new Command("Ph\u1ee5c h\u1ed3i RAM", 4, 11);
+         cmdRamRecoveryOn = new Command("Ph\u1ee5c h\u1ed3i (ON)", 4, 27);
+         cmdRamRecoveryOff = new Command("Ph\u1ee5c h\u1ed3i (OFF)", 4, 27);
+         cmdBack = new Command("Quay l\u1ea1i", 2, 10);
+         cmdSleepModeOn = new Command("Ch\u1ebf \u0111\u1ed9 ng\u1ee7 (ON)", 4, 25);
+         cmdSleepModeOff = new Command("Ch\u1ebf \u0111\u1ed9 ng\u1ee7 (OFF)", 4, 25);
+         cmdBackSubMenu = new Command("Quay l\u1ea1i", 2, 26);
+         cmdSave = new Command("L\u01b0u", 1, 21);
+         cmdDelete = new Command("X\u00f3a", 1, 19);
+         cmdEdit = new Command("S\u1eeda", 1, 20);
+         cmdAddNew = new Command("Th\u00eam m\u1edbi", 1, 18);
+      } else {
+         cmdRamRecovery = new Command("RAM Recovery", 4, 11);
+         cmdRamRecoveryOn = new Command("RAM Recovery (ON)", 4, 27);
+         cmdRamRecoveryOff = new Command("RAM Recovery (OFF)", 4, 27);
+         cmdBack = new Command("Back", 2, 10);
+         cmdSleepModeOn = new Command("Sleep Mode (ON)", 4, 25);
+         cmdSleepModeOff = new Command("Sleep Mode (OFF)", 4, 25);
+         cmdBackSubMenu = new Command("Back", 2, 26);
+         cmdSave = new Command("Save", 1, 21);
+         cmdDelete = new Command("Delete", 1, 19);
+         cmdEdit = new Command("Edit", 1, 20);
+         cmdAddNew = new Command("Add New", 1, 18);
+      }
+   }
+
    private List createOrResetSubMenu(String var1) {
+      checkLanguage();
+      initCommands();
       if (sharedSubMenu == null) {
          (sharedSubMenu = new List(var1, 3)).setCommandListener(this);
       } else {
          String var2 = sharedSubMenu.getTitle();
          sharedSubMenu.deleteAll();
-         if (var2 == "Save Directory") {
+         if ("Save Directory".equals(var2) || "Th\u01b0 m\u1ee5c l\u01b0u".equals(var2)) {
             sharedSubMenu.removeCommand(cmdAddNew);
             sharedSubMenu.removeCommand(cmdEdit);
             sharedSubMenu.removeCommand(cmdDelete);
@@ -97,7 +139,7 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
    private void showFolderMenu() {
       callerDisplayable = mainDisplay.getCurrent();
       List var1;
-      (var1 = this.createOrResetSubMenu("Save Directory")).addCommand(cmdAddNew);
+      (var1 = this.createOrResetSubMenu(isVietnamese ? "Th\u01b0 m\u1ee5c l\u01b0u" : "Save Directory")).addCommand(cmdAddNew);
       var1.addCommand(cmdEdit);
       var1.setSelectCommand(cmdEdit);
       var1.addCommand(cmdDelete);
@@ -114,14 +156,14 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
    }
    private void showRamOptionsMenu() {
       List var1;
-      (var1 = this.createOrResetSubMenu("Phone Storage")).addCommand(cmdRamRecovery);
+      (var1 = this.createOrResetSubMenu(isVietnamese ? "B\u1ed9 nh\u1edb m\u00e1y" : "Phone Storage")).addCommand(cmdRamRecovery);
       var1.addCommand(this.sleepModeThread == null ? cmdRamRecoveryOn : cmdRamRecoveryOff);
       var1.addCommand(cmdBack);
       var1.addCommand(this.ramRecoveryThread == null ? cmdSleepModeOn : cmdSleepModeOff);
       var1.setFitPolicy(1);
       Runtime var2 = Runtime.getRuntime();
       var1.append("RAM:" + var2.totalMemory() / 1024L + " k", null);
-      var1.append("Free RAM:" + var2.freeMemory() / 1024L + " k", null);
+      var1.append((isVietnamese ? "RAM tr\u1ed1ng:" : "Free RAM:") + var2.freeMemory() / 1024L + " k", null);
       var1.append("Chain:" + Thread.activeCount(), null);
       if (suspendedDisplayable != null) {
          var1.append("Display : ", null);
@@ -138,11 +180,11 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
    private void showEditEntryForm(String var1, String var2) {
       currentSubMenuDisplayable = mainDisplay.getCurrent();
       Form var3;
-      (var3 = new Form("Edit")).append(new TextField("Default:", var1, 512, 0));
-      var3.append(new TextField("New:", var2, 512, 0));
+      (var3 = new Form(isVietnamese ? "S\u1eeda" : "Edit")).append(new TextField(isVietnamese ? "M\u1eb7c \u0111\u1ecbnh:" : "Default:", var1, 512, 0));
+      var3.append(new TextField(isVietnamese ? "M\u1edbi:" : "New:", var2, 512, 0));
       var3.setCommandListener(this);
-      var3.addCommand(new Command("Confirm", 4, 22));
-      var3.addCommand(new Command("Cancel", 2, 23));
+      var3.addCommand(new Command(isVietnamese ? "X\u00e1c nh\u1eadn" : "Confirm", 4, 22));
+      var3.addCommand(new Command(isVietnamese ? "H\u1ee7y" : "Cancel", 2, 23));
       mainDisplay.setCurrent(var3);
    }
    private static void saveRedirectMapRecord() {
@@ -196,7 +238,9 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
       }
    }
    private void initMainUi() {
-      List var1 = mainMenuList = new List("MTX Menu", 3);
+      checkLanguage();
+      initCommands();
+      List var1 = mainMenuList = new List(isVietnamese ? "Menu MTX" : "MTX Menu", 3);
       if (backupDirectory == null) {
          backupDirectory = "file:///c/" + this.getAppProperty("MIDlet-Name") + ".db";
       }
@@ -209,13 +253,13 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
       }
 
       runningMidlets = new lib.MIDlet[mainMenuList.size()];
-      var1.addCommand(new Command("Launch App", 1, 0));
-      var1.addCommand(new Command("Terminate App", 1, 1));
-      var1.addCommand(new Command("Minimize", 1, 5));
-      var1.addCommand(new Command("Screen Light", 1, 8));
-      var1.addCommand(new Command("RAM Options", 1, 4));
-      var1.addCommand(new Command("General Settings", 1, 3));
-      var1.addCommand(new Command("Exit", 7, 2));
+      var1.addCommand(new Command(isVietnamese ? "Ch\u1ea1y \u1ee9ng d\u1ee5ng" : "Launch App", 1, 0));
+      var1.addCommand(new Command(isVietnamese ? "D\u1eebng \u1ee9ng d\u1ee5ng" : "Terminate App", 1, 1));
+      var1.addCommand(new Command(isVietnamese ? "Thu nh\u1ecf" : "Minimize", 1, 5));
+      var1.addCommand(new Command(isVietnamese ? "Ch\u1ec9nh \u0111\u1ed9 s\u00e1ng" : "Screen Light", 1, 8));
+      var1.addCommand(new Command(isVietnamese ? "T\u00f9y ch\u1ecdn RAM" : "RAM Options", 1, 4));
+      var1.addCommand(new Command(isVietnamese ? "C\u00e0i \u0111\u1eb7t c\u01a1 b\u1ea3n" : "General Settings", 1, 3));
+      var1.addCommand(new Command(isVietnamese ? "Tho\u00e1t" : "Exit", 7, 2));
       var1.setCommandListener(this);
       if (mainMenuList.size() == 1) {
          threadActionCode = 0;
@@ -338,7 +382,7 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
             }
          }
 
-         showError("Backup created successfully");
+         showError(isVietnamese ? "T\u1ea1o sao l\u01b0u th\u00e0nh c\u00f4ng!" : "Backup created successfully");
          return;
       } catch (Throwable var21) {
          lib.Display.mc.showError(var21, lib.Display.mc);
@@ -364,7 +408,7 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
                   var2 = var7.readUTF();
                } catch (Exception var5) {
                   var7.close();
-                  showError("Backup imported successfully");
+                  showError(isVietnamese ? "Nh\u1eadp kh\u1ea9u sao l\u01b0u th\u00e0nh c\u00f4ng!" : "Backup imported successfully");
                   return;
                }
 
@@ -575,24 +619,24 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
                return;
             case 3:
                Form var12;
-               (var12 = new Form("General Settings")).addCommand(new Command("Back", 2, 10));
-               var12.addCommand(new Command("Save", 4, 9));
-               var12.append(new TextField("Minimize Key:", String.valueOf(Canvas.menukey), 10, 2));
-               var12.append(new TextField("Response Delay:", String.valueOf(Canvas.waittime), 10, 2));
-               var12.append(new TextField("Sleep Timer:", String.valueOf(sleepIntervalMs / 1000L), 12, 2));
-               var12.append(new TextField("Icon Size (W * H):", MidletInfo.iconwidth + "*" + MidletInfo.iconheight, 12, 0));
-               var12.append(new TextField("RAM Recovery Interval:", String.valueOf(ramRecoveryIntervalMs), 12, 2));
-               var12.append(new TextField("Opacity (1-255):", String.valueOf(bgOpacity), 3, 2));
-               var12.append(new TextField("Background Image Path:", String.valueOf(bgImagePath), 256, 0));
-               var12.append(new TextField("Backup Path:", backupDirectory, 256, 0));
-               var12.append(new TextField("Access Code:", "", 20, 0));
-               var12.append(new TextField("Screenshot Key:", String.valueOf(Canvas.jiekey), 10, 2));
-               var12.append(new TextField("Screenshot Delay:", String.valueOf(Canvas.jietime), 10, 2));
-               var12.append(new TextField("Compression Level:", String.valueOf(Canvas.savelevel), 10, 2));
-               var12.append(new TextField("Save", Canvas.savepath, 200, 0));
-               var12.addCommand(new Command("Create Backup", 4, 6));
-               var12.addCommand(new Command("Import Backup", 4, 7));
-               var12.addCommand(new Command("Save Directory", 4, 17));
+               (var12 = new Form(isVietnamese ? "C\u00e0i \u0111\u1eb7t c\u01a1 b\u1ea3n" : "General Settings")).addCommand(new Command(isVietnamese ? "Quay l\u1ea1i" : "Back", 2, 10));
+               var12.addCommand(new Command(isVietnamese ? "L\u01b0u" : "Save", 4, 9));
+               var12.append(new TextField(isVietnamese ? "Ph\u00edm thu nh\u1ecf:" : "Minimize Key:", String.valueOf(Canvas.menukey), 10, 2));
+               var12.append(new TextField(isVietnamese ? "Th\u1eddi gian \u0111\u00e1p \u1ee9ng:" : "Response Delay:", String.valueOf(Canvas.waittime), 10, 2));
+               var12.append(new TextField(isVietnamese ? "B\u1ea5m gi\u1edd ng\u1ee7:" : "Sleep Timer:", String.valueOf(sleepIntervalMs / 1000L), 12, 2));
+               var12.append(new TextField(isVietnamese ? "C\u1ee1 icon (r\u1ed9ng * cao):" : "Icon Size (W * H):", MidletInfo.iconwidth + "*" + MidletInfo.iconheight, 12, 0));
+               var12.append(new TextField(isVietnamese ? "Kho\u1ea3ng RAM \u0111\u01b0\u1ee3c ph\u1ee5c h\u1ed3i:" : "RAM Recovery Interval:", String.valueOf(ramRecoveryIntervalMs), 12, 2));
+               var12.append(new TextField(isVietnamese ? "\u0110\u1ed9 trong su\u1ed1t (1-255):" : "Opacity (1-255):", String.valueOf(bgOpacity), 3, 2));
+               var12.append(new TextField(isVietnamese ? "\u0110\u01b0\u1eddng d\u1eabn h\u00ecnh n\u1ec1n:" : "Background Image Path:", String.valueOf(bgImagePath), 256, 0));
+               var12.append(new TextField(isVietnamese ? "\u1ed4 sao l\u01b0u:" : "Backup Path:", backupDirectory, 256, 0));
+               var12.append(new TextField(isVietnamese ? "M\u00e3 truy c\u1eadp:" : "Access Code:", "", 20, 0));
+               var12.append(new TextField(isVietnamese ? "Ph\u00edm ch\u1ee5p \u1ea3nh:" : "Screenshot Key:", String.valueOf(Canvas.jiekey), 10, 2));
+               var12.append(new TextField(isVietnamese ? "Th\u1eddi gian ch\u1edd ch\u1ee5p:" : "Screenshot Delay:", String.valueOf(Canvas.jietime), 10, 2));
+               var12.append(new TextField(isVietnamese ? "\u0110\u1ed9 n\u00e9n \u1ea3nh:" : "Compression Level:", String.valueOf(Canvas.savelevel), 10, 2));
+               var12.append(new TextField(isVietnamese ? "\u0110\u01b0\u1eddng d\u1eabn l\u01b0u:" : "Save Path:", Canvas.savepath, 200, 0));
+               var12.addCommand(new Command(isVietnamese ? "T\u1ea1o sao l\u01b0u" : "Create Backup", 4, 6));
+               var12.addCommand(new Command(isVietnamese ? "Nh\u1eadp kh\u1ea9u sao l\u01b0u" : "Import Backup", 4, 7));
+               var12.addCommand(new Command(isVietnamese ? "Th\u01b0 m\u1ee5c l\u01b0u" : "Save Directory", 4, 17));
                var12.setCommandListener(this);
                mainDisplay.setCurrent(var12);
                return;
@@ -611,12 +655,12 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
                return;
             case 8:
                Form var11;
-               (var11 = new Form("Screen Light Settings")).setCommandListener(this);
-               var11.append(new Gauge("Brightness", true, 100, screenLightLevel));
-               var11.append(new Gauge("Brightness", true, 10, screenLightLevel / 10));
+               (var11 = new Form(isVietnamese ? "Ch\u1ec9nh \u0111\u00e8n m\u00e0n h\u00ecnh" : "Screen Light Settings")).setCommandListener(this);
+               var11.append(new Gauge(isVietnamese ? "\u0110\u1ed9 s\u00e1ng" : "Brightness", true, 100, screenLightLevel));
+               var11.append(new Gauge(isVietnamese ? "\u0110\u1ed9 s\u00e1ng" : "Brightness", true, 10, screenLightLevel / 10));
                var11.setItemStateListener(this);
-               var11.addCommand(new Command("Back", 2, 10));
-               var11.addCommand(new Command("Save", 4, 24));
+               var11.addCommand(new Command(isVietnamese ? "Quay l\u1ea1i" : "Back", 2, 10));
+               var11.addCommand(new Command(isVietnamese ? "L\u01b0u" : "Save", 4, 24));
                mainDisplay.setCurrent(var11);
                return;
             case 9:
@@ -671,7 +715,7 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
                   return;
                }
 
-               showError("Incorrect Password");
+               showError(isVietnamese ? "Sai m\u1eadt kh\u1ea9u!" : "Incorrect Password");
                return;
             case 13:
                this.notifyDestroyed();
@@ -851,11 +895,12 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
             Canvas.savepath = var9.readUTF();
             var9.close();
             if (securityPassword.length() > 0) {
+               checkLanguage();
                Form var10;
-               (var10 = new Form("Password")).append(new TextField("Access Code:", "", 20, 0));
+               (var10 = new Form(isVietnamese ? "M\u1eadt kh\u1ea9u" : "Password")).append(new TextField(isVietnamese ? "M\u00e3 truy c\u1eadp:" : "Access Code:", "", 20, 0));
                var10.setCommandListener(this);
-               var10.addCommand(new Command("Confirm", 4, 12));
-               var10.addCommand(new Command("Exit", 7, 13));
+               var10.addCommand(new Command(isVietnamese ? "X\u00e1c nh\u1eadn" : "Confirm", 4, 12));
+               var10.addCommand(new Command(isVietnamese ? "Tho\u00e1t" : "Exit", 7, 13));
                mainDisplay.setCurrent(var10);
             } else {
                this.initMainUi();

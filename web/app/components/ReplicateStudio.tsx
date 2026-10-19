@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from "react";
 import { JarMetadata, JarProcessor, ReplicateOptions } from "../../lib/engine/JarProcessor";
+import { useLanguage } from "../../lib/i18n/LanguageContext";
 import {
   Upload,
   Copy,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 
 export function ReplicateStudio() {
+  const { language, t } = useLanguage();
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [metadata, setMetadata] = useState<JarMetadata | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -48,7 +50,7 @@ export function ReplicateStudio() {
     if (!files || files.length === 0) return;
     const file = files[0];
     if (!file.type.startsWith("image/") && !file.name.match(/\.(png|jpg|jpeg|gif|webp)$/i)) {
-      setErrorMessage("Please select a valid image file (.png, .jpg, .webp).");
+      setErrorMessage(t("err_select_image"));
       return;
     }
     try {
@@ -56,7 +58,7 @@ export function ReplicateStudio() {
       const url = URL.createObjectURL(file);
       setCustomIcon({ url, bytes: new Uint8Array(buf) });
     } catch {
-      setErrorMessage("Failed to read image file.");
+      setErrorMessage(t("err_read_image"));
     }
   };
 
@@ -64,7 +66,7 @@ export function ReplicateStudio() {
     if (!files || files.length === 0) return;
     const file = files[0];
     if (!file.name.toLowerCase().endsWith(".jar")) {
-      setErrorMessage("Please select a valid J2ME .jar file.");
+      setErrorMessage(t("err_select_jar"));
       return;
     }
 
@@ -77,10 +79,11 @@ export function ReplicateStudio() {
       setSourceFile(file);
       setMetadata(meta);
 
+      const isViet = language === "vi";
       const defaultBase = meta.name || file.name.replace(/\.[^/.]+$/, "");
       setOptions({
-        appName: `${defaultBase} Multi`,
-        displayName: `${defaultBase} Multi`,
+        appName: isViet ? `${defaultBase} Đa ứng dụng` : `${defaultBase} Multi`,
+        displayName: isViet ? `${defaultBase} Đa ứng dụng` : `${defaultBase} Multi`,
         author: meta.vendor || "MTX JarSync",
         featureScreenshot: false,
         featureList: true,
@@ -90,12 +93,12 @@ export function ReplicateStudio() {
 
       const initialNames: string[] = [];
       for (let i = 1; i <= 26; i++) {
-        initialNames.push(`${defaultBase} ${i}`);
+        initialNames.push(isViet ? `${defaultBase} (Bản sao ${i})` : `${defaultBase} ${i}`);
       }
       setCloneNames(initialNames);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setErrorMessage(`Failed to read JAR: ${msg}`);
+      setErrorMessage(t("err_read_jar", { msg }));
     } finally {
       setIsLoadingFile(false);
     }
@@ -134,6 +137,7 @@ export function ReplicateStudio() {
         featureMainPageList: options.featureMainPageList,
         featureNoExit: options.featureNoExit,
         customIconBytes: customIcon?.bytes,
+        language,
       };
 
       const blob = await JarProcessor.replicateJar(sourceFile, replicateOpts, (pct, status) => {
@@ -143,7 +147,7 @@ export function ReplicateStudio() {
       setResultBlob(blob);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setErrorMessage(`Replication failed: ${msg}`);
+      setErrorMessage(t("err_replicate_failed", { msg }));
     } finally {
       setIsProcessing(false);
     }
@@ -154,7 +158,7 @@ export function ReplicateStudio() {
     const url = URL.createObjectURL(resultBlob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${options.appName.replace(/[^a-zA-Z0-9_\-]/g, "_")}.jar`;
+    a.download = `${options.appName.replace(/[^a-zA-Z0-9_\-\u00C0-\u024F\u1EA0-\u1EF9]/g, "_")}.jar`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -202,16 +206,16 @@ export function ReplicateStudio() {
             )}
           </div>
           <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-            {isLoadingFile ? "Inspecting JAR metadata..." : "Select a J2ME .JAR file to replicate"}
+            {isLoadingFile ? t("reading_jar") : t("drop_jar_title")}
           </h3>
           <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 max-w-sm mx-auto leading-normal">
-            Drag and drop or browse. We replicate its classes and state into multiple isolated accounts in one JAR.
+            {t("drop_jar_subtitle")}
           </p>
           <button
             type="button"
             className="mt-4 px-4 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition active:scale-95 shadow-xs"
           >
-            Browse File
+            {t("browse_file")}
           </button>
         </div>
       )}
@@ -221,7 +225,7 @@ export function ReplicateStudio() {
         <div className="p-3.5 rounded-lg bg-red-50/80 dark:bg-neutral-900 border border-red-200 dark:border-red-900/50 text-red-900 dark:text-red-300 flex items-start space-x-2.5 text-xs animate-in fade-in duration-200">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
           <div className="flex-1">
-            <span className="font-semibold block text-red-950 dark:text-red-200">Error</span>
+            <span className="font-semibold block text-red-950 dark:text-red-200">{t("error_prefix")}</span>
             <p className="opacity-90">{errorMessage}</p>
           </div>
         </div>
@@ -247,7 +251,7 @@ export function ReplicateStudio() {
                 <div
                   onClick={() => iconInputRef.current?.click()}
                   className="relative group cursor-pointer shrink-0"
-                  title="Click to customize master launcher icon"
+                  title={t("custom_icon_desc")}
                 >
                   <div className="h-11 w-11 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center overflow-hidden p-1 transition group-hover:border-neutral-400 dark:group-hover:border-neutral-600">
                     {customIcon ? (
@@ -280,7 +284,7 @@ export function ReplicateStudio() {
                     </h4>
                     {customIcon && (
                       <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800">
-                        Custom Icon
+                        {language === "vi" ? "Icon tùy chỉnh" : "Custom Icon"}
                       </span>
                     )}
                   </div>
@@ -296,7 +300,7 @@ export function ReplicateStudio() {
                         }}
                         className="text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 underline text-[11px]"
                       >
-                        Reset Icon
+                        {t("remove_icon")}
                       </button>
                     ) : (
                       <button
@@ -307,7 +311,7 @@ export function ReplicateStudio() {
                         }}
                         className="text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 underline text-[11px]"
                       >
-                        Change Icon
+                        {t("upload_icon")}
                       </button>
                     )}
                   </div>
@@ -317,7 +321,7 @@ export function ReplicateStudio() {
                 onClick={reset}
                 className="text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 transition px-2.5 py-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-900 shrink-0"
               >
-                Change JAR
+                {t("change_file")}
               </button>
             </div>
 
@@ -326,14 +330,14 @@ export function ReplicateStudio() {
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
-                    Replication Instances
+                    {t("config_title")}
                   </h4>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    How many isolated copies to bake into the JAR (1 to 26).
+                    {t("clone_count_label")}
                   </p>
                 </div>
                 <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100">
-                  {cloneCount} {cloneCount === 1 ? "Clone (Direct Launch)" : "Clones"}
+                  {cloneCount} {cloneCount === 1 ? (language === "vi" ? "Bản (Chạy trực tiếp)" : "Clone (Direct Launch)") : t("instances")}
                 </span>
               </div>
 
@@ -369,7 +373,7 @@ export function ReplicateStudio() {
             {/* Display Names per Clone */}
             <div className="surface-card p-4 rounded-xl space-y-3">
               <h4 className="text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
-                Clone Titles (In-Game Switcher Display)
+                {t("instance_names_label")}
               </h4>
               <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
                 {Array.from({ length: cloneCount }).map((_, i) => (
@@ -381,7 +385,7 @@ export function ReplicateStudio() {
                       type="text"
                       value={cloneNames[i] || ""}
                       onChange={(e) => updateCloneName(i, e.target.value)}
-                      placeholder={`Clone ${i + 1}`}
+                      placeholder={language === "vi" ? `Bản sao ${i + 1}` : `Clone ${i + 1}`}
                       className="flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-neutral-50 dark:bg-neutral-900/80 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-hidden focus:border-neutral-400 dark:focus:border-neutral-600 transition"
                     />
                   </div>
@@ -395,13 +399,13 @@ export function ReplicateStudio() {
             <div className="surface-card p-4 rounded-xl space-y-4">
               <div className="flex items-center space-x-2 text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-400 pb-2 border-b border-neutral-100 dark:border-neutral-800">
                 <Settings2 className="h-4 w-4" />
-                <span>Archive Metadata</span>
+                <span>{t("replicate_ready_header")}</span>
               </div>
 
               <div className="space-y-3 text-xs">
                 <div>
                   <label className="block text-neutral-600 dark:text-neutral-400 font-medium mb-1">
-                    Collection Name
+                    {t("app_name_label")}
                   </label>
                   <input
                     type="text"
@@ -413,7 +417,7 @@ export function ReplicateStudio() {
 
                 <div>
                   <label className="block text-neutral-600 dark:text-neutral-400 font-medium mb-1">
-                    Display Title (MIDlet-1)
+                    {t("display_name_label")}
                   </label>
                   <input
                     type="text"
@@ -425,7 +429,7 @@ export function ReplicateStudio() {
 
                 <div>
                   <label className="block text-neutral-600 dark:text-neutral-400 font-medium mb-1">
-                    Vendor / Author
+                    {t("author_label")}
                   </label>
                   <input
                     type="text"
@@ -443,14 +447,14 @@ export function ReplicateStudio() {
                   onClick={() => setShowAdvanced(!showAdvanced)}
                   className="flex items-center justify-between w-full text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 py-1"
                 >
-                  <span>Advanced J2ME Options</span>
+                  <span>{t("advanced_options")}</span>
                   {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
                 </button>
 
                 {showAdvanced && (
                   <div className="space-y-2.5 pt-2 text-xs">
                     <label className="flex items-center justify-between cursor-pointer">
-                      <span className="text-neutral-700 dark:text-neutral-300">Nokia No-Exit Hook</span>
+                      <span className="text-neutral-700 dark:text-neutral-300">{t("opt_no_exit")}</span>
                       <input
                         type="checkbox"
                         checked={options.featureNoExit}
@@ -459,16 +463,7 @@ export function ReplicateStudio() {
                       />
                     </label>
                     <label className="flex items-center justify-between cursor-pointer">
-                      <span className="text-neutral-700 dark:text-neutral-300">In-Game Switcher List</span>
-                      <input
-                        type="checkbox"
-                        checked={options.featureList}
-                        onChange={(e) => setOptions({ ...options, featureList: e.target.checked })}
-                        className="accent-neutral-900 dark:accent-neutral-100 h-4 w-4 rounded-sm"
-                      />
-                    </label>
-                    <label className="flex items-center justify-between cursor-pointer">
-                      <span className="text-neutral-700 dark:text-neutral-300">Screenshot Overlay</span>
+                      <span className="text-neutral-700 dark:text-neutral-300">{t("opt_screenshot")}</span>
                       <input
                         type="checkbox"
                         checked={options.featureScreenshot}
@@ -484,7 +479,7 @@ export function ReplicateStudio() {
               {isProcessing && (
                 <div className="space-y-1.5 pt-2">
                   <div className="flex justify-between text-xs font-mono">
-                    <span className="text-neutral-600 dark:text-neutral-400 truncate mr-2">{statusMessage || "Processing..."}</span>
+                    <span className="text-neutral-600 dark:text-neutral-400 truncate mr-2">{statusMessage || t("processing_replicate")}</span>
                     <span className="font-bold text-neutral-900 dark:text-neutral-100">{progress}%</span>
                   </div>
                   <div className="w-full h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
@@ -512,7 +507,9 @@ export function ReplicateStudio() {
                   ) : (
                     <Copy className="h-3.5 w-3.5 shrink-0" />
                   )}
-                  <span className="truncate">{isProcessing ? "Replicating Bytecode..." : `Replicate into ${cloneCount} Clones`}</span>
+                  <span className="truncate">
+                    {isProcessing ? t("processing_replicate") : `${t("btn_start_replicate")} (${cloneCount} ${t("instances")})`}
+                  </span>
                 </button>
               ) : (
                 <div className="space-y-2">
@@ -521,11 +518,11 @@ export function ReplicateStudio() {
                     className="w-full py-2.5 px-3 sm:px-4 rounded-lg font-semibold text-xs bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-[0.99] flex items-center justify-center space-x-2 transition shadow-xs"
                   >
                     <Download className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">Download Replicated JAR ({(resultBlob.size / 1024).toFixed(1)} KB)</span>
+                    <span className="truncate">{t("btn_download_replicated")} ({(resultBlob.size / 1024).toFixed(1)} KB)</span>
                   </button>
                   <div className="flex items-center justify-center space-x-1.5 text-xs text-neutral-600 dark:text-neutral-400">
                     <Check className="h-3.5 w-3.5 shrink-0" />
-                    <span className="truncate">Multi-instance JAR successfully generated</span>
+                    <span className="truncate">{t("success_replicate_title")}</span>
                   </div>
                 </div>
               )}
