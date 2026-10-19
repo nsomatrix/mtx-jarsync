@@ -184,7 +184,7 @@ export function ReplicateStudio() {
           className={`border border-dashed rounded-xl p-6 sm:p-12 text-center cursor-pointer transition-all duration-200 ${
             isDragging
               ? "border-neutral-500 bg-neutral-100/80 dark:bg-neutral-900"
-              : "border-neutral-300 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-700 bg-white/70 dark:bg-neutral-950/50"
+              : "border-neutral-300 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-700 bg-white dark:bg-neutral-950/50 shadow-xs"
           }`}
         >
           <input
