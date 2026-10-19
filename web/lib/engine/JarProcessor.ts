@@ -324,6 +324,21 @@ export class JarProcessor {
       throw new Error('No replicated sub-app entries found in this JAR. Make sure this is a multi-MIDlet archive.');
     }
 
+    // Load runtime overlay archives for standalone execution
+    let coreBytes: ArrayBuffer | null = null;
+    let switcherBytes: ArrayBuffer | null = null;
+    try {
+      [coreBytes, switcherBytes] = await Promise.all([
+        fetch('/runtime/mtx-core.jar').then(r => r.arrayBuffer()),
+        fetch('/runtime/mtx-switcher.jar').then(r => r.arrayBuffer())
+      ]);
+    } catch {
+      // fallback
+    }
+
+    const coreZip = coreBytes ? await JSZip.loadAsync(coreBytes) : null;
+    const switcherZip = switcherBytes ? await JSZip.loadAsync(switcherBytes) : null;
+
     const results: SplitResult[] = [];
     const stepWeight = 85 / subAppEntries.length;
 
@@ -335,35 +350,70 @@ export class JarProcessor {
       const singleZip = new JSZip();
       const prefix = idx === 0 ? '' : `${String.fromCharCode(97 + idx)}/`;
 
-      let standaloneManifest = '';
-      const iniFileObj = zip.file(entry.iniFile);
-      if (iniFileObj) {
-        standaloneManifest = await iniFileObj.async('text');
+      // 1. Copy mtx-core and mtx-switcher runtime (provides lib.MIDlet adapter and direct auto-launch)
+      if (coreZip) {
+        for (const [p, f] of Object.entries(coreZip.files)) {
+          if (!f.dir) singleZip.file(p, await f.async('uint8array'));
+        }
+      }
+      if (switcherZip) {
+        for (const [p, f] of Object.entries(switcherZip.files)) {
+          if (!f.dir) singleZip.file(p, await f.async('uint8array'));
+        }
       }
 
-      if (!standaloneManifest || !standaloneManifest.includes('MIDlet-1:')) {
-        standaloneManifest = [
-          'Manifest-Version: 1.0',
-          'MicroEdition-Configuration: CLDC-1.1',
-          'MicroEdition-Profile: MIDP-2.0',
-          'MIDlet-Version: 1.0.0',
-          `MIDlet-Name: ${entry.title}`,
-          `MIDlet-Vendor: MTX JarSync`,
-          `MIDlet-1: ${entry.title},/icon.png,${entry.className}`,
-          ''
-        ].join('\r\n');
-      }
-
-      singleZip.file('META-INF/MANIFEST.MF', standaloneManifest);
-
-      // Extract icon
+      // 2. Extract icon
       const iconObj = zip.file(entry.icon) || zip.file('icon.png');
       if (iconObj) {
         const iconData = await iconObj.async('uint8array');
         singleZip.file('icon.png', iconData);
+        singleZip.file(entry.icon, iconData);
+        singleZip.file('mtx/mid.png', iconData);
       }
 
-      // Copy classes (preserving lib/ runtime compatibility) and resources
+      // 3. Extract ini file
+      const iniFileObj = zip.file(entry.iniFile);
+      if (iniFileObj) {
+        singleZip.file(entry.iniFile, await iniFileObj.async('uint8array'));
+      }
+
+      let vendor = 'MTX JarSync';
+      let version = '1.0.0';
+      let config = 'CLDC-1.1';
+      let profile = 'MIDP-2.0';
+
+      if (iniFileObj) {
+        const iniText = await iniFileObj.async('text');
+        for (const l of iniText.split(/\r?\n/)) {
+          const m = l.match(/^([^:]+):\s*(.*)$/);
+          if (m) {
+            const key = m[1].trim();
+            const val = m[2].trim();
+            if (key === 'MIDlet-Vendor') vendor = val;
+            else if (key === 'MIDlet-Version') version = val;
+            else if (key === 'MicroEdition-Configuration') config = val;
+            else if (key === 'MicroEdition-Profile') profile = val;
+          }
+        }
+      }
+
+      // 4. Standalone direct-launch manifest with single sub-app entry
+      const standaloneManifest = [
+        'Manifest-Version: 1.0',
+        `MicroEdition-Configuration: ${config}`,
+        `MicroEdition-Profile: ${profile}`,
+        `MIDlet-Version: ${version}`,
+        `MIDlet-Name: ${entry.title}`,
+        `MIDlet-Vendor: ${vendor}`,
+        `MIDlet-1: ${entry.title},/icon.png,mtx.jarsync.runtime.MtxSwitcher`,
+        'Nokia-MIDlet-no-exit: true',
+        `0: ${entry.title},/icon.png,${entry.className},/${entry.iniFile}`,
+        ''
+      ].join('\r\n');
+
+      singleZip.file('META-INF/MANIFEST.MF', standaloneManifest);
+
+      // 5. Copy classes (retaining lib/ runtime classes and Static.class) and resources
       zip.forEach((path, fileObj) => {
         if (fileObj.dir || path.startsWith('META-INF/')) return;
         if (path.startsWith('mtx/') || path.startsWith('MrQuyet/')) return;
@@ -376,15 +426,15 @@ export class JarProcessor {
         }
 
         if (idx === 0) {
+          // Root clone: include all non-prefixed classes (including Static.class) and resources
           const isOtherPrefixed = /^[b-z]\//.test(path);
-          if (!isOtherPrefixed && path !== 'Static.class') {
+          if (!isOtherPrefixed) {
             singleZip.file(path, fileObj.async('uint8array'));
           }
         } else {
+          // Prefixed clone: include clone classes (including prefix/Static.class) and shared resources
           if (path.startsWith(prefix)) {
-            if (!path.endsWith('Static.class')) {
-              singleZip.file(path, fileObj.async('uint8array'));
-            }
+            singleZip.file(path, fileObj.async('uint8array'));
           } else if (!path.endsWith('.class') && !/^[b-z]\//.test(path)) {
             singleZip.file(path, fileObj.async('uint8array'));
           }
@@ -412,6 +462,141 @@ export class JarProcessor {
 
     onProgress?.(100, 'Split complete');
     return results;
+  }
+
+  /**
+   * Bundles a selected subset of sub-apps from an existing multi-game JAR into a new multi-JAR archive.
+   */
+  public static async bundleSubApps(
+    sourceJar: File | Blob,
+    selectedIndices: number[],
+    options?: {
+      appName?: string;
+      displayName?: string;
+      author?: string;
+    },
+    onProgress?: (percent: number, status: string) => void
+  ): Promise<Blob> {
+    onProgress?.(10, 'Reading source archive...');
+    const zip = await JSZip.loadAsync(sourceJar);
+    const manifestFile = zip.file('META-INF/MANIFEST.MF');
+    if (!manifestFile) {
+      throw new Error('Invalid JAR: Missing META-INF/MANIFEST.MF');
+    }
+
+    const manifestText = await manifestFile.async('text');
+    const lines = manifestText.split(/\r?\n/);
+    const subAppEntries: { index: number; title: string; icon: string; className: string; iniFile: string }[] = [];
+
+    for (const line of lines) {
+      const match = line.match(/^(\d+):\s*(.+)$/);
+      if (match) {
+        const parts = match[2].split(',');
+        if (parts.length >= 4) {
+          subAppEntries.push({
+            index: parseInt(match[1]),
+            title: parts[0].trim(),
+            icon: parts[1].trim().replace(/^\//, ''),
+            className: parts[2].trim(),
+            iniFile: parts[3].trim().replace(/^\//, '')
+          });
+        }
+      }
+    }
+
+    const selectedEntries = subAppEntries.filter((_, idx) => selectedIndices.includes(idx));
+    if (selectedEntries.length === 0) {
+      throw new Error('No valid sub-apps selected to bundle.');
+    }
+
+    onProgress?.(30, 'Bundling selected applications...');
+    const outZip = new JSZip();
+
+    // Load updated runtime overlay binaries if available
+    try {
+      const [coreBytes, switcherBytes] = await Promise.all([
+        fetch('/runtime/mtx-core.jar').then(r => r.arrayBuffer()),
+        fetch('/runtime/mtx-switcher.jar').then(r => r.arrayBuffer())
+      ]);
+      const coreZip = await JSZip.loadAsync(coreBytes);
+      const switcherZip = await JSZip.loadAsync(switcherBytes);
+      for (const [p, f] of Object.entries(coreZip.files)) {
+        if (!f.dir) outZip.file(p, await f.async('uint8array'));
+      }
+      for (const [p, f] of Object.entries(switcherZip.files)) {
+        if (!f.dir) outZip.file(p, await f.async('uint8array'));
+      }
+    } catch {
+      // fallback to source classes
+    }
+
+    for (const [path, fileObj] of Object.entries(zip.files)) {
+      if (fileObj.dir || path.startsWith('META-INF/')) continue;
+      // Retain runtime classes and resources
+      if (path.startsWith('lib/') || path.startsWith('mtx/') || path.startsWith('MrQuyet/')) {
+        if (!outZip.file(path)) {
+          outZip.file(path, await fileObj.async('uint8array'));
+        }
+        continue;
+      }
+      // Root classes
+      if (!/^[b-z]\//.test(path)) {
+        if (path.endsWith('.class')) {
+          if (selectedIndices.includes(0)) {
+            outZip.file(path, await fileObj.async('uint8array'));
+          }
+        } else {
+          // Shared non-class resources, icons, and inis
+          outZip.file(path, await fileObj.async('uint8array'));
+        }
+        continue;
+      }
+      // Prefixed clone classes
+      const prefixMatch = path.match(/^([b-z])\//);
+      if (prefixMatch) {
+        const prefixIdx = prefixMatch[1].charCodeAt(0) - 97;
+        if (selectedIndices.includes(prefixIdx)) {
+          outZip.file(path, await fileObj.async('uint8array'));
+        }
+      }
+    }
+
+    // Generate manifest
+    onProgress?.(70, 'Generating bundle manifest...');
+    const combinedMidletEntries: string[] = [];
+    for (let i = 0; i < selectedEntries.length; i++) {
+      const e = selectedEntries[i];
+      combinedMidletEntries.push(`${e.title},/${e.icon},${e.className},/${e.iniFile}`);
+    }
+
+    const appName = options?.appName || `MTX Multi (${selectedEntries.length}-in-1)`;
+    const displayName = options?.displayName || appName;
+    const author = options?.author || 'MTX JarSync';
+
+    let mf = 'Manifest-Version: 1.0\r\n';
+    mf += 'MicroEdition-Configuration: CLDC-1.1\r\n';
+    mf += 'MicroEdition-Profile: MIDP-2.0\r\n';
+    mf += 'MIDlet-Version: 2.5\r\n';
+    mf += `MIDlet-Vendor: ${author}\r\n`;
+    mf += `MIDlet-Name: ${appName}\r\n`;
+    mf += `MIDlet-1: ${displayName},/mtx/mid.png,mtx.jarsync.runtime.MtxSwitcher\r\n`;
+    mf += 'Nokia-MIDlet-no-exit: true\r\n';
+    for (let i = 0; i < combinedMidletEntries.length; i++) {
+      mf += `${i}: ${combinedMidletEntries[i]}\r\n`;
+    }
+    mf += '\r\n';
+
+    outZip.file('META-INF/MANIFEST.MF', mf);
+
+    onProgress?.(90, 'Compressing bundled archive...');
+    const resultBlob = await outZip.generateAsync({
+      type: 'blob',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 9 }
+    });
+
+    onProgress?.(100, 'Bundling complete');
+    return resultBlob;
   }
 
   private static patchClassBytes(bytes: Uint8Array, midletChar: string): Uint8Array {

@@ -9,6 +9,10 @@ import {
   Package,
   Archive,
   Loader2,
+  CheckSquare,
+  Square,
+  Layers,
+  Zap,
 } from "lucide-react";
 import JSZip from "jszip";
 
@@ -16,9 +20,11 @@ export function SplitStudio() {
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isBundling, setIsBundling] = useState(false);
   const [progress, setProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState("");
   const [splitResults, setSplitResults] = useState<SplitResult[]>([]);
+  const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -33,6 +39,7 @@ export function SplitStudio() {
 
     setSourceFile(file);
     setSplitResults([]);
+    setSelectedIndices([]);
     setErrorMessage(null);
     setIsProcessing(true);
     setProgress(0);
@@ -43,6 +50,7 @@ export function SplitStudio() {
         setStatusMessage(status);
       });
       setSplitResults(results);
+      setSelectedIndices(results.map((_, i) => i));
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setErrorMessage(`Split failed: ${msg}`);
@@ -72,16 +80,64 @@ export function SplitStudio() {
     const url = URL.createObjectURL(archiveBlob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${sourceFile?.name.replace(/\.[^/.]+$/, "")}_extracted_jars.zip`;
+    a.download = `${sourceFile?.name.replace(/\.[^/.]+$/, "")}_extracted_standalone_jars.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
+  const handleToggleSelect = (idx: number) => {
+    setSelectedIndices((prev) =>
+      prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIndices.length === splitResults.length) {
+      setSelectedIndices([]);
+    } else {
+      setSelectedIndices(splitResults.map((_, i) => i));
+    }
+  };
+
+  const handleBundleSelected = async () => {
+    if (!sourceFile || selectedIndices.length === 0) return;
+    setIsBundling(true);
+    setErrorMessage(null);
+    try {
+      const bundleBlob = await JarProcessor.bundleSubApps(
+        sourceFile,
+        selectedIndices,
+        {
+          appName: `${sourceFile.name.replace(/\.[^/.]+$/, "")} (${selectedIndices.length}-in-1)`,
+          displayName: `${sourceFile.name.replace(/\.[^/.]+$/, "")} (${selectedIndices.length}-in-1)`,
+        },
+        (pct, status) => {
+          setProgress(pct);
+          setStatusMessage(status);
+        }
+      );
+      const url = URL.createObjectURL(bundleBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${sourceFile.name.replace(/\.[^/.]+$/, "")}_${selectedIndices.length}in1.jar`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setErrorMessage(`Bundle failed: ${msg}`);
+    } finally {
+      setIsBundling(false);
+    }
+  };
+
   const resetAll = () => {
     setSourceFile(null);
     setSplitResults([]);
+    setSelectedIndices([]);
     setErrorMessage(null);
   };
 
@@ -121,7 +177,7 @@ export function SplitStudio() {
             Select a multi-game or replicated JAR to split
           </h3>
           <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 max-w-sm mx-auto leading-normal">
-            Extracts embedded instances, cleans package prefixes, and yields independent standalone JARs.
+            Extracts standalone single JARs that launch directly, or recombines sub-apps into customized bundles.
           </p>
           <button
             type="button"
@@ -133,12 +189,12 @@ export function SplitStudio() {
       )}
 
       {/* Progress state */}
-      {isProcessing && (
+      {(isProcessing || isBundling) && (
         <div className="surface-card p-6 rounded-xl text-center space-y-3 animate-in fade-in duration-200">
           <Loader2 className="h-5 w-5 text-neutral-700 dark:text-neutral-300 animate-spin mx-auto" />
           <div>
             <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 block">
-              {statusMessage || "Splitting games..."}
+              {statusMessage || (isBundling ? "Bundling selected apps..." : "Splitting games...")}
             </span>
             <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">{progress}%</span>
           </div>
@@ -156,7 +212,7 @@ export function SplitStudio() {
         <div className="p-3.5 rounded-lg bg-red-50/80 dark:bg-neutral-900 border border-red-200 dark:border-red-900/50 text-red-900 dark:text-red-300 flex items-start space-x-2.5 text-xs animate-in fade-in duration-200">
           <AlertCircle className="h-4 w-4 shrink-0 mt-0.5 text-red-600 dark:text-red-400" />
           <div className="flex-1">
-            <span className="font-semibold block text-red-950 dark:text-red-200">Split Error</span>
+            <span className="font-semibold block text-red-950 dark:text-red-200">Error</span>
             <p className="opacity-90">{errorMessage}</p>
             <button
               onClick={resetAll}
@@ -171,62 +227,128 @@ export function SplitStudio() {
       {/* Results View */}
       {splitResults.length > 0 && (
         <div className="space-y-4 animate-in fade-in duration-200">
+          {/* Action Header Card */}
           <div className="surface-card p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <span className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">
                 {sourceFile?.name} ({(sourceFile?.size ? sourceFile.size / 1024 : 0).toFixed(1)} KB)
               </span>
               <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5">
-                Extracted {splitResults.length} Standalone J2ME Archives
+                Extracted {splitResults.length} Sub-Applications
               </h4>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                Single JARs launch directly without switcher menu. Select multiple to bundle.
+              </p>
             </div>
 
-            <div className="flex items-center space-x-2 w-full sm:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={resetAll}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition hover:bg-neutral-100 dark:hover:bg-neutral-900 shrink-0"
               >
                 Split Another
               </button>
+
+              {selectedIndices.length >= 2 && (
+                <button
+                  onClick={handleBundleSelected}
+                  disabled={isBundling}
+                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-xs"
+                >
+                  <Layers className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">Bundle {selectedIndices.length}-in-1 JAR</span>
+                </button>
+              )}
+
               <button
                 onClick={handleDownloadAllZip}
-                className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-xs"
+                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200/80 dark:hover:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-xs"
               >
                 <Archive className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">Download All (.ZIP)</span>
+                <span className="truncate">Download All Standalones (.ZIP)</span>
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {splitResults.map((item, idx) => (
-              <div
-                key={idx}
-                className="surface-card p-3.5 rounded-xl flex flex-col justify-between space-y-3"
-              >
-                <div className="flex items-center space-x-2.5 min-w-0">
-                  <div className="h-8 w-8 shrink-0 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center text-neutral-600 dark:text-neutral-400">
-                    <Package className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <h5 className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-                      {item.metadata.name}
-                    </h5>
-                    <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">
-                      {(item.blob.size / 1024).toFixed(1)} KB
-                    </span>
-                  </div>
-                </div>
+          {/* Quick Selection Bar */}
+          <div className="flex items-center justify-between text-xs px-1 text-neutral-500 dark:text-neutral-400">
+            <button
+              onClick={handleSelectAll}
+              className="flex items-center space-x-1.5 hover:text-neutral-900 dark:hover:text-white font-medium transition"
+            >
+              {selectedIndices.length === splitResults.length ? (
+                <CheckSquare className="h-3.5 w-3.5 text-neutral-900 dark:text-neutral-100" />
+              ) : (
+                <Square className="h-3.5 w-3.5" />
+              )}
+              <span>
+                {selectedIndices.length === splitResults.length ? "Deselect All" : "Select All"} ({selectedIndices.length}/{splitResults.length} selected)
+              </span>
+            </button>
+            <span className="text-[11px] font-mono">
+              Individual downloads open directly into the game
+            </span>
+          </div>
 
-                <button
-                  onClick={() => handleDownloadSingle(item)}
-                  className="w-full py-1.5 px-2.5 rounded-lg text-xs font-medium bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200/80 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center space-x-1.5 transition active:scale-95"
+          {/* Cards Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {splitResults.map((item, idx) => {
+              const isSelected = selectedIndices.includes(idx);
+              return (
+                <div
+                  key={idx}
+                  className={`surface-card p-3.5 rounded-xl flex flex-col justify-between space-y-3 border transition ${
+                    isSelected
+                      ? "border-neutral-400 dark:border-neutral-600 bg-neutral-50/50 dark:bg-neutral-900/40"
+                      : "border-neutral-200/80 dark:border-neutral-800"
+                  }`}
                 >
-                  <Download className="h-3.5 w-3.5" />
-                  <span>Download .JAR</span>
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center space-x-2.5 min-w-0">
+                      <div className="h-8 w-8 shrink-0 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center text-neutral-600 dark:text-neutral-400">
+                        <Package className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <h5 className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                          {item.metadata.name}
+                        </h5>
+                        <div className="flex items-center space-x-1.5 mt-0.5">
+                          <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">
+                            {(item.blob.size / 1024).toFixed(1)} KB
+                          </span>
+                          <span className="text-[10px] text-neutral-400 dark:text-neutral-600">•</span>
+                          <span className="inline-flex items-center space-x-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                            <Zap className="h-2.5 w-2.5 shrink-0" />
+                            <span>Direct Launch</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleToggleSelect(idx)}
+                      className="p-1 text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition shrink-0"
+                      title={isSelected ? "Deselect for bundling" : "Select for bundling"}
+                    >
+                      {isSelected ? (
+                        <CheckSquare className="h-4 w-4 text-neutral-900 dark:text-neutral-100" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={() => handleDownloadSingle(item)}
+                    className="w-full py-1.5 px-2.5 rounded-lg text-xs font-medium bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200/80 dark:hover:bg-neutral-800 text-neutral-800 dark:text-neutral-200 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center space-x-1.5 transition active:scale-95"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span>Download Standalone .JAR</span>
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

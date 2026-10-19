@@ -217,9 +217,15 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
       var1.addCommand(new Command("General Settings", 1, 3));
       var1.addCommand(new Command("Exit", 7, 2));
       var1.setCommandListener(this);
-      mainDisplay.setCurrent(mainMenuList);
-      if (bgImagePath != null) {
-         loadBackgroundImage();
+      if (mainMenuList.size() == 1) {
+         threadActionCode = 0;
+         this.firstTimeRun = false;
+         new Thread(this).start();
+      } else {
+         mainDisplay.setCurrent(mainMenuList);
+         if (bgImagePath != null) {
+            loadBackgroundImage();
+         }
       }
    }
    public void run() {
@@ -231,6 +237,7 @@ public class MtxSwitcher extends MIDlet implements Runnable, CommandListener, It
                runningMidlets[threadActionCode] = var2;
                mainMenuList.set(threadActionCode, var7.name, MidletInfo.runimg(var7.icon));
                var2.start();
+               var2.showDisplay();
             }
          } catch (Throwable var3) {
             this.showError(var3, this);

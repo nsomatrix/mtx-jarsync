@@ -329,11 +329,11 @@ export function ReplicateStudio() {
                     Replication Instances
                   </h4>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    How many isolated copies to bake into the JAR (2 to 26).
+                    How many isolated copies to bake into the JAR (1 to 26).
                   </p>
                 </div>
                 <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100">
-                  {cloneCount} Clones
+                  {cloneCount} {cloneCount === 1 ? "Clone (Direct Launch)" : "Clones"}
                 </span>
               </div>
 
@@ -341,14 +341,14 @@ export function ReplicateStudio() {
               <div className="space-y-2.5 pt-1">
                 <input
                   type="range"
-                  min={2}
+                  min={1}
                   max={26}
                   value={cloneCount}
                   onChange={(e) => setCloneCount(parseInt(e.target.value))}
                   className="w-full accent-neutral-900 dark:accent-neutral-100 cursor-pointer h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg"
                 />
                 <div className="flex items-center gap-1 sm:gap-1.5 pt-0.5">
-                  {[2, 3, 5, 10, 15, 20, 26].map((num) => (
+                  {[1, 2, 3, 5, 10, 15, 20, 26].map((num) => (
                     <button
                       key={num}
                       type="button"
