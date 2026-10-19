@@ -101,7 +101,7 @@ export function SplitStudio() {
             handleFile(e.dataTransfer.files);
           }}
           onClick={() => fileInputRef.current?.click()}
-          className={`border border-dashed rounded-xl p-8 sm:p-14 text-center cursor-pointer transition-all duration-200 ${
+          className={`border border-dashed rounded-xl p-6 sm:p-14 text-center cursor-pointer transition-all duration-200 ${
             isDragging
               ? "border-neutral-500 bg-neutral-100/80 dark:bg-neutral-900"
               : "border-neutral-300 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-700 bg-white/70 dark:bg-neutral-950/50"
@@ -184,7 +184,7 @@ export function SplitStudio() {
             <div className="flex items-center space-x-2 w-full sm:w-auto">
               <button
                 onClick={resetAll}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition hover:bg-neutral-100 dark:hover:bg-neutral-900 shrink-0"
               >
                 Split Another
               </button>
@@ -192,8 +192,8 @@ export function SplitStudio() {
                 onClick={handleDownloadAllZip}
                 className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-xs"
               >
-                <Archive className="h-3.5 w-3.5" />
-                <span>Download All (.ZIP)</span>
+                <Archive className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Download All (.ZIP)</span>
               </button>
             </div>
           </div>

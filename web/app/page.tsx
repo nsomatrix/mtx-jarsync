@@ -15,10 +15,10 @@ export default function Home() {
         <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Content Container */}
-        <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <main className="w-full max-w-5xl mx-auto px-3.5 sm:px-6 py-5 sm:py-8 overflow-x-hidden">
           {/* Section Header */}
-          <div className="mb-6">
-            <h1 className="text-lg sm:text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+          <div className="mb-5 sm:mb-6">
+            <h1 className="text-base sm:text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
               {activeTab === "replicate" ? "Replicate J2ME Application" : "Split Multi-Game Archive"}
             </h1>
             <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 max-w-2xl leading-relaxed">
@@ -33,8 +33,8 @@ export default function Home() {
       </div>
 
       {/* Footer */}
-      <footer className="w-full border-t border-neutral-200/80 dark:border-neutral-900 py-6 mt-16 transition-colors">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-neutral-500 dark:text-neutral-400">
+      <footer className="w-full border-t border-neutral-200/80 dark:border-neutral-900 py-6 mt-12 sm:mt-16 transition-colors">
+        <div className="max-w-5xl mx-auto px-3.5 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs text-neutral-500 dark:text-neutral-400 text-center sm:text-left">
           <div>
             <span>100% In-Browser Execution • Pure TypeScript JVM Rewriter</span>
           </div>

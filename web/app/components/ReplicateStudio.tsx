@@ -181,7 +181,7 @@ export function ReplicateStudio() {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border border-dashed rounded-xl p-8 sm:p-14 text-center cursor-pointer transition-all duration-200 ${
+          className={`border border-dashed rounded-xl p-6 sm:p-12 text-center cursor-pointer transition-all duration-200 ${
             isDragging
               ? "border-neutral-500 bg-neutral-100/80 dark:bg-neutral-900"
               : "border-neutral-300 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-700 bg-white/70 dark:bg-neutral-950/50"
@@ -347,16 +347,17 @@ export function ReplicateStudio() {
                   onChange={(e) => setCloneCount(parseInt(e.target.value))}
                   className="w-full accent-neutral-900 dark:accent-neutral-100 cursor-pointer h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg"
                 />
-                <div className="grid grid-cols-7 gap-1 sm:flex sm:items-center sm:space-x-1.5">
+                <div className="flex items-center gap-1 sm:gap-1.5 pt-0.5">
                   {[2, 3, 5, 10, 15, 20, 26].map((num) => (
                     <button
                       key={num}
+                      type="button"
                       onClick={() => setCloneCount(num)}
-                      className={`py-1 text-xs rounded-md font-mono transition border ${
+                      className={`flex-1 min-w-0 py-1 sm:py-1.5 text-[11px] sm:text-xs rounded-lg font-mono transition border ${
                         cloneCount === num
                           ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-black border-transparent font-semibold shadow-xs"
                           : "border-neutral-200/80 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900"
-                      } flex-1 text-center`}
+                      } text-center`}
                     >
                       {num}
                     </button>
@@ -370,10 +371,10 @@ export function ReplicateStudio() {
               <h4 className="text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
                 Clone Titles (In-Game Switcher Display)
               </h4>
-              <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+              <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
                 {Array.from({ length: cloneCount }).map((_, i) => (
                   <div key={i} className="flex items-center space-x-2 text-xs">
-                    <span className="w-16 font-mono text-neutral-500 dark:text-neutral-400 shrink-0">
+                    <span className="w-16 font-mono text-[11px] text-neutral-500 dark:text-neutral-400 shrink-0 select-none">
                       #{i + 1} ({i === 0 ? "root" : String.fromCharCode(97 + i)})
                     </span>
                     <input
@@ -381,7 +382,7 @@ export function ReplicateStudio() {
                       value={cloneNames[i] || ""}
                       onChange={(e) => updateCloneName(i, e.target.value)}
                       placeholder={`Clone ${i + 1}`}
-                      className="flex-1 px-3 py-1.5 rounded-lg bg-neutral-50 dark:bg-neutral-900/80 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-hidden focus:border-neutral-400 dark:focus:border-neutral-600 transition"
+                      className="flex-1 min-w-0 px-3 py-1.5 rounded-lg bg-neutral-50 dark:bg-neutral-900/80 border border-neutral-200 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 text-xs focus:outline-hidden focus:border-neutral-400 dark:focus:border-neutral-600 transition"
                     />
                   </div>
                 ))}
@@ -500,31 +501,31 @@ export function ReplicateStudio() {
                 <button
                   disabled={isProcessing}
                   onClick={handleStartReplicate}
-                  className={`w-full py-2.5 px-4 rounded-lg font-semibold text-xs flex items-center justify-center space-x-2 transition ${
+                  className={`w-full py-2.5 px-3 sm:px-4 rounded-lg font-semibold text-xs flex items-center justify-center space-x-2 transition ${
                     !isProcessing
                       ? "bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-[0.99] shadow-xs"
                       : "bg-neutral-200 dark:bg-neutral-800 text-neutral-400 dark:text-neutral-500 cursor-not-allowed"
                   }`}
                 >
                   {isProcessing ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
                   ) : (
-                    <Copy className="h-3.5 w-3.5" />
+                    <Copy className="h-3.5 w-3.5 shrink-0" />
                   )}
-                  <span>{isProcessing ? "Replicating Bytecode..." : `Replicate into ${cloneCount} Clones`}</span>
+                  <span className="truncate">{isProcessing ? "Replicating Bytecode..." : `Replicate into ${cloneCount} Clones`}</span>
                 </button>
               ) : (
                 <div className="space-y-2">
                   <button
                     onClick={handleDownload}
-                    className="w-full py-2.5 px-4 rounded-lg font-semibold text-xs bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-[0.99] flex items-center justify-center space-x-2 transition shadow-xs"
+                    className="w-full py-2.5 px-3 sm:px-4 rounded-lg font-semibold text-xs bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-[0.99] flex items-center justify-center space-x-2 transition shadow-xs"
                   >
-                    <Download className="h-3.5 w-3.5" />
-                    <span>Download Replicated JAR ({(resultBlob.size / 1024).toFixed(1)} KB)</span>
+                    <Download className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">Download Replicated JAR ({(resultBlob.size / 1024).toFixed(1)} KB)</span>
                   </button>
                   <div className="flex items-center justify-center space-x-1.5 text-xs text-neutral-600 dark:text-neutral-400">
-                    <Check className="h-3.5 w-3.5" />
-                    <span>Multi-instance JAR successfully generated</span>
+                    <Check className="h-3.5 w-3.5 shrink-0" />
+                    <span className="truncate">Multi-instance JAR successfully generated</span>
                   </div>
                 </div>
               )}

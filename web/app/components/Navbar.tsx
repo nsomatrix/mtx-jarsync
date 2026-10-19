@@ -25,13 +25,13 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
   return (
     <>
       <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-black/90 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800 transition-colors">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-3.5 sm:px-6 h-14 flex items-center justify-between gap-2">
           {/* Logo & Product Title */}
-          <div className="flex items-center space-x-2.5">
+          <div className="flex items-center space-x-2 shrink-0">
             <div className="h-7 w-7 rounded-md bg-neutral-900 dark:bg-neutral-100 flex items-center justify-center text-white dark:text-neutral-900 shrink-0">
               <Layers className="h-4 w-4" />
             </div>
-            <span className="font-semibold text-sm tracking-tight text-neutral-900 dark:text-neutral-100">
+            <span className="font-semibold text-sm tracking-tight text-neutral-900 dark:text-neutral-100 hidden sm:inline">
               MTX JarSync
             </span>
           </div>
@@ -40,7 +40,7 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
           <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800">
             <button
               onClick={() => setActiveTab("replicate")}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 rounded-md text-xs font-medium transition-all ${
                 activeTab === "replicate"
                   ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs font-semibold"
                   : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
@@ -51,7 +51,7 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
             </button>
             <button
               onClick={() => setActiveTab("split")}
-              className={`flex items-center space-x-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+              className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 rounded-md text-xs font-medium transition-all ${
                 activeTab === "split"
                   ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs font-semibold"
                   : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
@@ -63,16 +63,26 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
           </div>
 
           {/* Theme Switcher & Info */}
-          <div className="flex items-center space-x-1.5">
+          <div className="flex items-center space-x-1 shrink-0">
             <button
               onClick={() => setShowInfo(true)}
               className="p-1.5 text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 rounded-md transition"
-              title="About"
+              title="About MTX JarSync"
             >
               <HelpCircle className="h-4 w-4" />
             </button>
 
-            <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800">
+            {/* Mobile single theme toggle */}
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="sm:hidden p-1.5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-md transition"
+              title="Toggle theme"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </button>
+
+            {/* Desktop 3-way theme toggle */}
+            <div className="hidden sm:flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800">
               <button
                 onClick={() => setTheme("light")}
                 className={`p-1 rounded-md transition ${
