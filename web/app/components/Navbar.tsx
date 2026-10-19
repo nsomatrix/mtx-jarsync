@@ -75,27 +75,27 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
             <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800">
               <button
                 onClick={() => setTheme("dark")}
-                className={`flex items-center space-x-1.5 px-2 py-1 rounded-md text-xs transition ${
+                className={`p-1.5 rounded-md transition ${
                   theme === "dark"
-                    ? "bg-neutral-800 text-white font-medium shadow-xs"
+                    ? "bg-neutral-800 text-white shadow-xs"
                     : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
                 }`}
                 title="Dark Mode"
+                aria-label="Dark Mode"
               >
                 <Moon className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Dark</span>
               </button>
               <button
                 onClick={() => setTheme("light")}
-                className={`flex items-center space-x-1.5 px-2 py-1 rounded-md text-xs transition ${
+                className={`p-1.5 rounded-md transition ${
                   theme === "light"
-                    ? "bg-white text-neutral-900 font-medium shadow-xs"
+                    ? "bg-white text-neutral-900 shadow-xs"
                     : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
                 }`}
                 title="Light Mode"
+                aria-label="Light Mode"
               >
                 <Sun className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Light</span>
               </button>
             </div>
           </div>
