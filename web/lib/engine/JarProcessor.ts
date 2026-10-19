@@ -127,7 +127,6 @@ export class JarProcessor {
     const { metadata, zip } = await JarProcessor.inspectJar(file);
 
     const outZip = new JSZip();
-    const patcher = new ClassPatcher();
     const combinedMidletEntries: string[] = [];
 
     // 1. Load runtime overlay archives
@@ -227,7 +226,7 @@ export class JarProcessor {
 
       // Patch and write each class
       for (const cf of classFiles) {
-        const patchedBytes = JarProcessor.patchClassBytes(patcher, cf.data, prefixChar);
+        const patchedBytes = JarProcessor.patchClassBytes(cf.data, prefixChar);
         outZip.file(prefix + cf.path, patchedBytes);
       }
 
@@ -405,11 +404,12 @@ export class JarProcessor {
     return results;
   }
 
-  private static patchClassBytes(patcher: ClassPatcher, bytes: Uint8Array, midletChar: string): Uint8Array {
+  private static patchClassBytes(bytes: Uint8Array, midletChar: string): Uint8Array {
     const reader = new DataReader(bytes);
-    if (reader.readI4() !== 0xCAFEBABE) {
+    if (reader.readU4() !== 0xCAFEBABE) {
       return bytes;
     }
+    const patcher = new ClassPatcher();
     patcher.readClassHeader(reader);
     patcher.patchClass(reader, midletChar);
 
