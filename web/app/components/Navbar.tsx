@@ -27,7 +27,7 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
       <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-black/90 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800 transition-colors">
         <div className="max-w-5xl mx-auto px-3.5 sm:px-6">
           {/* Main Top Row */}
-          <div className="h-13 sm:h-14 flex items-center justify-between gap-3">
+          <div className="h-14 flex items-center justify-between gap-3">
             {/* Brand Logo */}
             <div className="flex items-center shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -131,14 +131,14 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
         </div>
 
         {/* Mobile Segmented Mode Tabs */}
-        <div className="sm:hidden pb-2.5 pt-0.5">
-          <div className="grid grid-cols-2 p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-xl border border-neutral-200/80 dark:border-neutral-800">
+        <div className="sm:hidden pt-1 pb-3.5">
+          <div className="grid grid-cols-2 p-1 bg-neutral-100 dark:bg-neutral-900 rounded-xl border border-neutral-200/80 dark:border-neutral-800 shadow-2xs">
             <button
               onClick={() => setActiveTab("replicate")}
-              className={`flex items-center justify-center space-x-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center justify-center space-x-1.5 py-2 px-3 rounded-lg text-xs transition-all ${
                 activeTab === "replicate"
                   ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs font-semibold"
-                  : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
+                  : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200 font-medium"
               }`}
             >
               <Copy className="h-3.5 w-3.5 shrink-0" />
@@ -146,10 +146,10 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
             </button>
             <button
               onClick={() => setActiveTab("split")}
-              className={`flex items-center justify-center space-x-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`flex items-center justify-center space-x-1.5 py-2 px-3 rounded-lg text-xs transition-all ${
                 activeTab === "split"
                   ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs font-semibold"
-                  : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
+                  : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200 font-medium"
               }`}
             >
               <Scissors className="h-3.5 w-3.5 shrink-0" />

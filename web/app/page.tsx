@@ -17,13 +17,13 @@ export default function Home() {
         <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Content Container */}
-        <main className="w-full max-w-5xl mx-auto px-3.5 sm:px-6 py-5 sm:py-8 overflow-x-hidden">
+        <main className="w-full max-w-5xl mx-auto px-3.5 sm:px-6 pt-7 sm:pt-9 pb-10 sm:pb-14 overflow-x-hidden">
           {/* Section Header */}
-          <div className="mb-5 sm:mb-6">
-            <h1 className="text-base sm:text-xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
               {activeTab === "replicate" ? t("page_replicate_title") : t("page_split_title")}
             </h1>
-            <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1.5 max-w-2xl leading-relaxed">
               {activeTab === "replicate" ? t("page_replicate_desc") : t("page_split_desc")}
             </p>
           </div>
