@@ -18,18 +18,18 @@ function subscribe(callback: () => void) {
 }
 
 function getStoredTheme(): Theme {
-  if (typeof window === "undefined") return "system";
+  if (typeof window === "undefined") return "dark";
   try {
     const val = localStorage.getItem("mtx-theme") as Theme | null;
     if (val === "light" || val === "dark" || val === "system") {
       return val;
     }
   } catch {}
-  return "system";
+  return "dark";
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const storedTheme = useSyncExternalStore(subscribe, getStoredTheme, () => "system" as Theme);
+  const storedTheme = useSyncExternalStore(subscribe, getStoredTheme, () => "dark" as Theme);
   const [theme, setThemeState] = useState<Theme>(storedTheme);
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark");
 
