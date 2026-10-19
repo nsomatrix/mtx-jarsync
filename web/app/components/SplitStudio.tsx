@@ -8,14 +8,12 @@ import {
   Download,
   AlertCircle,
   Package,
-  Archive,
   Loader2,
   CheckSquare,
   Square,
   Layers,
   Zap,
 } from "lucide-react";
-import JSZip from "jszip";
 
 export function SplitStudio() {
   const { language, t } = useLanguage();
@@ -62,27 +60,11 @@ export function SplitStudio() {
   };
 
   const handleDownloadSingle = (res: SplitResult) => {
-    const url = URL.createObjectURL(res.blob);
+    const jarBlob = new Blob([res.blob], { type: "application/java-archive" });
+    const url = URL.createObjectURL(jarBlob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = res.fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleDownloadAllZip = async () => {
-    if (splitResults.length === 0) return;
-    const zip = new JSZip();
-    for (const res of splitResults) {
-      zip.file(res.fileName, res.blob);
-    }
-    const archiveBlob = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(archiveBlob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${sourceFile?.name.replace(/\.[^/.]+$/, "")}_extracted_standalone_jars.zip`;
+    a.download = res.fileName.endsWith(".jar") ? res.fileName : `${res.fileName}.jar`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -127,7 +109,8 @@ export function SplitStudio() {
           setStatusMessage(status);
         }
       );
-      const url = URL.createObjectURL(mergedBlob);
+      const jarBlob = new Blob([mergedBlob], { type: "application/java-archive" });
+      const url = URL.createObjectURL(jarBlob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `${baseName}_merged_${selectedIndices.length}in1.jar`;
@@ -237,15 +220,15 @@ export function SplitStudio() {
       {splitResults.length > 0 && (
         <div className="space-y-4 animate-in fade-in duration-200">
           {/* Action Header Card */}
-          <div className="surface-card p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <span className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">
+          <div className="surface-card p-3.5 sm:p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="min-w-0 w-full sm:w-auto">
+              <span className="text-[11px] font-mono text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block truncate">
                 {sourceFile?.name} ({(sourceFile?.size ? sourceFile.size / 1024 : 0).toFixed(1)} KB)
               </span>
               <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mt-0.5">
                 {t("split_extracted_title", { count: splitResults.length })}
               </h4>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 leading-relaxed">
                 {t("split_extracted_desc")}
               </p>
             </div>
@@ -253,7 +236,7 @@ export function SplitStudio() {
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <button
                 onClick={resetAll}
-                className="px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition hover:bg-neutral-100 dark:hover:bg-neutral-900 shrink-0"
+                className="flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition hover:bg-neutral-100 dark:hover:bg-neutral-900 text-center shrink-0"
               >
                 {t("split_another")}
               </button>
@@ -262,40 +245,35 @@ export function SplitStudio() {
                 <button
                   onClick={handleMergeSelected}
                   disabled={isMerging}
-                  className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-xs"
+                  className="flex-1 sm:flex-initial px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-xs"
                 >
                   <Layers className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">{t("btn_merge", { count: selectedIndices.length })}</span>
+                  <span>{t("btn_merge")}</span>
+                  <span className="px-1.5 py-0.5 rounded-md bg-white/20 dark:bg-black/20 text-[10px] font-mono font-bold leading-none">
+                    {selectedIndices.length}
+                  </span>
                 </button>
               )}
-
-              <button
-                onClick={handleDownloadAllZip}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-medium text-neutral-700 dark:text-neutral-300 bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200/80 dark:hover:bg-neutral-800 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-xs"
-              >
-                <Archive className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{t("btn_download_all_zip")}</span>
-              </button>
             </div>
           </div>
 
           {/* Quick Selection Bar */}
-          <div className="flex items-center justify-between text-xs px-1 text-neutral-500 dark:text-neutral-400">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs px-1 text-neutral-500 dark:text-neutral-400">
             <button
               onClick={handleSelectAll}
-              className="flex items-center space-x-1.5 hover:text-neutral-900 dark:hover:text-white font-medium transition"
+              className="flex items-center space-x-1.5 hover:text-neutral-900 dark:hover:text-white font-medium transition py-0.5"
             >
               {selectedIndices.length === splitResults.length ? (
-                <CheckSquare className="h-3.5 w-3.5 text-neutral-900 dark:text-neutral-100" />
+                <CheckSquare className="h-3.5 w-3.5 text-neutral-900 dark:text-neutral-100 shrink-0" />
               ) : (
-                <Square className="h-3.5 w-3.5" />
+                <Square className="h-3.5 w-3.5 shrink-0" />
               )}
               <span>
                 {selectedIndices.length === splitResults.length ? t("deselect_all") : t("select_all")}{" "}
                 {t("selected_count", { selected: selectedIndices.length, total: splitResults.length })}
               </span>
             </button>
-            <span className="text-[11px] font-mono">
+            <span className="text-[11px] font-mono text-neutral-400 dark:text-neutral-500">
               {t("direct_launch_hint")}
             </span>
           </div>

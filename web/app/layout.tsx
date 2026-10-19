@@ -13,6 +13,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "MTX JarSync - J2ME Replicate & Split",
   description: "Pure browser-side replication and splitting of J2ME applications with bytecode isolation and runtime switching.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export const viewport: Viewport = {

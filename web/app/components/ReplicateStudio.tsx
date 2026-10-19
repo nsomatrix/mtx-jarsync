@@ -155,10 +155,12 @@ export function ReplicateStudio() {
 
   const handleDownload = () => {
     if (!resultBlob || !options.appName) return;
-    const url = URL.createObjectURL(resultBlob);
+    const jarBlob = new Blob([resultBlob], { type: "application/java-archive" });
+    const url = URL.createObjectURL(jarBlob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${options.appName.replace(/[^a-zA-Z0-9_\-\u00C0-\u024F\u1EA0-\u1EF9]/g, "_")}.jar`;
+    const cleanName = options.appName.replace(/[^a-zA-Z0-9_\-\u00C0-\u024F\u1EA0-\u1EF9]/g, "_");
+    a.download = cleanName.endsWith(".jar") ? cleanName : `${cleanName}.jar`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -246,14 +248,14 @@ export function ReplicateStudio() {
             />
 
             {/* Source Info Card */}
-            <div className="surface-card p-4 rounded-xl flex items-center justify-between">
-              <div className="flex items-center space-x-3.5 min-w-0">
+            <div className="surface-card p-3.5 sm:p-4 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center space-x-3 min-w-0 w-full sm:w-auto">
                 <div
                   onClick={() => iconInputRef.current?.click()}
                   className="relative group cursor-pointer shrink-0"
                   title={t("custom_icon_desc")}
                 >
-                  <div className="h-11 w-11 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center overflow-hidden p-1 transition group-hover:border-neutral-400 dark:group-hover:border-neutral-600">
+                  <div className="h-10 w-10 sm:h-11 sm:w-11 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center overflow-hidden p-1 transition group-hover:border-neutral-400 dark:group-hover:border-neutral-600">
                     {customIcon ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
@@ -277,19 +279,19 @@ export function ReplicateStudio() {
                   </div>
                 </div>
 
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center space-x-2">
-                    <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                    <h4 className="text-xs sm:text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">
                       {metadata.name}
                     </h4>
                     {customIcon && (
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800">
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800 shrink-0">
                         {language === "vi" ? "Icon tùy chỉnh" : "Custom Icon"}
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2 text-xs text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
-                    <span>{metadata.vendor} • {(metadata.fileSize / 1024).toFixed(1)} KB</span>
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                    <span className="truncate">{metadata.vendor} • {(metadata.fileSize / 1024).toFixed(1)} KB</span>
                     <span>•</span>
                     {customIcon ? (
                       <button
@@ -319,15 +321,15 @@ export function ReplicateStudio() {
               </div>
               <button
                 onClick={reset}
-                className="text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 transition px-2.5 py-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-900 shrink-0"
+                className="text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 transition px-2.5 py-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-900 self-end sm:self-auto shrink-0"
               >
                 {t("change_file")}
               </button>
             </div>
 
             {/* Clone Count Selector */}
-            <div className="surface-card p-4 rounded-xl space-y-3">
-              <div className="flex items-center justify-between">
+            <div className="surface-card p-3.5 sm:p-4 rounded-xl space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h4 className="text-xs font-semibold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">
                     {t("config_title")}
@@ -336,8 +338,13 @@ export function ReplicateStudio() {
                     {t("clone_count_label")}
                   </p>
                 </div>
-                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100">
-                  {cloneCount} {cloneCount === 1 ? (language === "vi" ? "Bản (Chạy trực tiếp)" : "Clone (Direct Launch)") : t("instances")}
+                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 self-start sm:self-auto">
+                  {cloneCount} {cloneCount === 1 ? (language === "vi" ? "Bản" : "Clone") : t("instances")}{" "}
+                  {cloneCount === 1 && (
+                    <span className="text-[10px] text-neutral-500 font-normal">
+                      {language === "vi" ? "(Chạy trực tiếp)" : "(Direct Launch)"}
+                    </span>
+                  )}
                 </span>
               </div>
 
@@ -351,13 +358,13 @@ export function ReplicateStudio() {
                   onChange={(e) => setCloneCount(parseInt(e.target.value))}
                   className="w-full accent-neutral-900 dark:accent-neutral-100 cursor-pointer h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-lg"
                 />
-                <div className="flex items-center gap-1 sm:gap-1.5 pt-0.5">
+                <div className="grid grid-cols-8 gap-1 pt-0.5">
                   {[1, 2, 3, 5, 10, 15, 20, 26].map((num) => (
                     <button
                       key={num}
                       type="button"
                       onClick={() => setCloneCount(num)}
-                      className={`flex-1 min-w-0 py-1 sm:py-1.5 text-[11px] sm:text-xs rounded-lg font-mono transition border ${
+                      className={`w-full py-1 sm:py-1.5 text-[11px] sm:text-xs rounded-lg font-mono transition border ${
                         cloneCount === num
                           ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-black border-transparent font-semibold shadow-xs"
                           : "border-neutral-200/80 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-900"

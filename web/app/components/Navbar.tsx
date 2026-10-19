@@ -10,7 +10,6 @@ import {
   Scissors,
   HelpCircle,
   X,
-  Layers,
 } from "lucide-react";
 
 interface NavbarProps {
@@ -26,45 +25,47 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
   return (
     <>
       <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-black/90 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800 transition-colors">
-        <div className="max-w-5xl mx-auto px-3.5 sm:px-6 h-14 flex items-center justify-between gap-2">
-          {/* Logo & Product Title */}
-          <div className="flex items-center space-x-2 shrink-0">
-            <div className="h-7 w-7 rounded-md bg-neutral-900 dark:bg-neutral-100 flex items-center justify-center text-white dark:text-neutral-900 shrink-0">
-              <Layers className="h-4 w-4" />
+        <div className="max-w-5xl mx-auto px-3.5 sm:px-6">
+          {/* Main Top Row */}
+          <div className="h-13 sm:h-14 flex items-center justify-between gap-3">
+            {/* Brand Logo */}
+            <div className="flex items-center shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.png"
+                alt="JarSync"
+                className="h-9 sm:h-11 w-auto object-contain select-none cursor-pointer hover:opacity-90 transition-opacity"
+              />
             </div>
-            <span className="font-semibold text-sm tracking-tight text-neutral-900 dark:text-neutral-100 hidden sm:inline">
-              {t("app_title")}
-            </span>
-          </div>
 
-          {/* Core Mode Tabs: Replicate vs Split */}
-          <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800">
-            <button
-              onClick={() => setActiveTab("replicate")}
-              className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                activeTab === "replicate"
-                  ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs font-semibold"
-                  : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
-              }`}
-            >
-              <Copy className="h-3.5 w-3.5 shrink-0" />
-              <span>{t("tab_replicate")}</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("split")}
-              className={`flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 rounded-md text-xs font-medium transition-all ${
-                activeTab === "split"
-                  ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs font-semibold"
-                  : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
-              }`}
-            >
-              <Scissors className="h-3.5 w-3.5 shrink-0" />
-              <span>{t("tab_split")}</span>
-            </button>
-          </div>
+            {/* Desktop Core Mode Tabs */}
+            <div className="hidden sm:flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800">
+              <button
+                onClick={() => setActiveTab("replicate")}
+                className={`flex items-center space-x-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                  activeTab === "replicate"
+                    ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs font-semibold"
+                    : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
+                }`}
+              >
+                <Copy className="h-3.5 w-3.5 shrink-0" />
+                <span>{t("tab_replicate")}</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("split")}
+                className={`flex items-center space-x-1.5 px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                  activeTab === "split"
+                    ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs font-semibold"
+                    : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
+                }`}
+              >
+                <Scissors className="h-3.5 w-3.5 shrink-0" />
+                <span>{t("tab_split")}</span>
+              </button>
+            </div>
 
-          {/* Controls: Language, Theme & Info */}
-          <div className="flex items-center space-x-1.5 shrink-0">
+            {/* Controls: Language, Theme & Info */}
+            <div className="flex items-center space-x-1.5 shrink-0">
             {/* Language Switcher */}
             <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800 text-[11px] font-semibold">
               <button
@@ -87,7 +88,7 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
                 }`}
                 title="Tiếng Việt"
               >
-                VI
+                VN
               </button>
             </div>
 
@@ -128,12 +129,41 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
             </button>
           </div>
         </div>
-      </header>
+
+        {/* Mobile Segmented Mode Tabs */}
+        <div className="sm:hidden pb-2.5 pt-0.5">
+          <div className="grid grid-cols-2 p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-xl border border-neutral-200/80 dark:border-neutral-800">
+            <button
+              onClick={() => setActiveTab("replicate")}
+              className={`flex items-center justify-center space-x-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === "replicate"
+                  ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs font-semibold"
+                  : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
+              }`}
+            >
+              <Copy className="h-3.5 w-3.5 shrink-0" />
+              <span>{t("tab_replicate")}</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("split")}
+              className={`flex items-center justify-center space-x-1.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === "split"
+                  ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs font-semibold"
+                  : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
+              }`}
+            >
+              <Scissors className="h-3.5 w-3.5 shrink-0" />
+              <span>{t("tab_split")}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
 
       {/* Info Modal */}
       {showInfo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="relative w-full max-w-lg bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="relative w-full max-w-lg max-h-[85vh] overflow-y-auto bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl p-5 sm:p-6 shadow-2xl">
             <button
               onClick={() => setShowInfo(false)}
               className="absolute top-4 right-4 p-1 rounded-md text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition"

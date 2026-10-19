@@ -125,14 +125,14 @@ export class JarProcessor {
       onProgress?.(pct, status);
     };
 
-    report('Inspecting source JAR...');
+    report('Inspecting source JAR');
     const { metadata, zip } = await JarProcessor.inspectJar(file);
 
     const outZip = new JSZip();
     const combinedMidletEntries: string[] = [];
 
-    // 1. Load runtime overlay archives
-    report('Loading runtime overlay binaries...');
+    // 1. Load runtime overlay packages
+    report('Loading runtime overlay binaries');
     const [coreBytes, switcherBytes] = await Promise.all([
       fetch('/runtime/mtx-core.jar').then(r => r.arrayBuffer()),
       fetch(options.featureScreenshot ? '/runtime/mtx-switcher-ss.jar' : '/runtime/mtx-switcher.jar').then(r => r.arrayBuffer())
@@ -222,7 +222,7 @@ export class JarProcessor {
 
       combinedMidletEntries.push(`${titleName},/${pngName},${qualifiedClass},/${iniName}`);
 
-      report(`Synthesizing clone #${i + 1} (prefix: '${prefix || "root"}')...`);
+      report(`Synthesizing clone #${i + 1} (prefix: '${prefix || "root"}')`);
 
       // Initialize class replacements mapping for this clone
       const replacements = ClassPatcher.initClassReplacements();
@@ -246,13 +246,13 @@ export class JarProcessor {
     }
 
     // 4. Copy shared resources once to root
-    report('Packaging static game resources...');
+    report('Packaging static game resources');
     for (const rf of resourceFiles) {
       outZip.file(rf.path, rf.data);
     }
 
     // 5. Generate Master Manifest
-    report('Writing master manifest...');
+    report('Writing master manifest');
     if (metadata.midlet2Class) {
       combinedMidletEntries.push(`${metadata.name} Tool,/${pngName},${metadata.midlet2Class},/${iniName}`);
     }
@@ -277,9 +277,10 @@ export class JarProcessor {
 
     outZip.file('META-INF/MANIFEST.MF', mf);
 
-    report('Compressing final JAR...');
+    report('Compressing final JAR');
     const resultBlob = await outZip.generateAsync({
       type: 'blob',
+      mimeType: 'application/java-archive',
       compression: 'DEFLATE',
       compressionOptions: { level: 9 }
     });
@@ -296,7 +297,7 @@ export class JarProcessor {
     onProgress?: (progress: number, status: string) => void,
     options?: { language?: 'en' | 'vi' }
   ): Promise<SplitResult[]> {
-    onProgress?.(10, 'Reading archive manifest...');
+    onProgress?.(10, 'Reading package manifest');
     const arrayBuffer = await file.arrayBuffer();
     const zip = await JSZip.loadAsync(arrayBuffer);
 
@@ -326,10 +327,10 @@ export class JarProcessor {
     }
 
     if (subAppEntries.length === 0) {
-      throw new Error('No replicated sub-app entries found in this JAR. Make sure this is a multi-MIDlet archive.');
+      throw new Error('No replicated sub-app entries found in this JAR. Make sure this is a multi-MIDlet package.');
     }
 
-    // Load runtime overlay archives for standalone execution
+    // Load runtime overlay packages for standalone execution
     let coreBytes: ArrayBuffer | null = null;
     let switcherBytes: ArrayBuffer | null = null;
     try {
@@ -350,7 +351,7 @@ export class JarProcessor {
     for (let idx = 0; idx < subAppEntries.length; idx++) {
       const entry = subAppEntries[idx];
       const curPct = Math.round(10 + idx * stepWeight);
-      onProgress?.(curPct, `Extracting ${entry.title}...`);
+      onProgress?.(curPct, `Extracting ${entry.title}`);
 
       const singleZip = new JSZip();
       const prefix = idx === 0 ? '' : `${String.fromCharCode(97 + idx)}/`;
@@ -452,6 +453,7 @@ export class JarProcessor {
 
       const singleBlob = await singleZip.generateAsync({
         type: 'blob',
+        mimeType: 'application/java-archive',
         compression: 'DEFLATE',
         compressionOptions: { level: 9 }
       });
@@ -474,7 +476,7 @@ export class JarProcessor {
   }
 
   /**
-   * Merges a selected subset of sub-apps from an existing multi-game JAR into a new multi-JAR archive.
+   * Merges a selected subset of sub-apps from an existing multi-game JAR into a new multi-JAR package.
    */
   public static async mergeSubApps(
     sourceJar: File | Blob,
@@ -487,7 +489,7 @@ export class JarProcessor {
     },
     onProgress?: (percent: number, status: string) => void
   ): Promise<Blob> {
-    onProgress?.(10, 'Reading source archive...');
+    onProgress?.(10, 'Reading source package');
     const zip = await JSZip.loadAsync(sourceJar);
     const manifestFile = zip.file('META-INF/MANIFEST.MF');
     if (!manifestFile) {
@@ -519,7 +521,7 @@ export class JarProcessor {
       throw new Error('No valid sub-apps selected to merge.');
     }
 
-    onProgress?.(30, 'Merging selected applications...');
+    onProgress?.(30, 'Merging selected applications');
     const outZip = new JSZip();
 
     // Load updated runtime overlay binaries if available
@@ -572,7 +574,7 @@ export class JarProcessor {
     }
 
     // Generate manifest
-    onProgress?.(70, 'Generating merged manifest...');
+    onProgress?.(70, 'Generating merged manifest');
     const combinedMidletEntries: string[] = [];
     for (let i = 0; i < selectedEntries.length; i++) {
       const e = selectedEntries[i];
@@ -604,9 +606,10 @@ export class JarProcessor {
 
     outZip.file('META-INF/MANIFEST.MF', mf);
 
-    onProgress?.(90, 'Compressing merged archive...');
+    onProgress?.(90, 'Compressing merged package');
     const resultBlob = await outZip.generateAsync({
       type: 'blob',
+      mimeType: 'application/java-archive',
       compression: 'DEFLATE',
       compressionOptions: { level: 9 }
     });
