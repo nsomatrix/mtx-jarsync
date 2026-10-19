@@ -5,7 +5,6 @@ import { useTheme } from "../ThemeContext";
 import {
   Sun,
   Moon,
-  Laptop,
   Copy,
   Scissors,
   HelpCircle,
@@ -72,49 +71,31 @@ export function Navbar({ activeTab, setActiveTab }: NavbarProps) {
               <HelpCircle className="h-4 w-4" />
             </button>
 
-            {/* Mobile single theme toggle */}
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="sm:hidden p-1.5 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-900 rounded-md transition"
-              title="Toggle theme"
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
-
-            {/* Desktop 3-way theme toggle */}
-            <div className="hidden sm:flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800">
-              <button
-                onClick={() => setTheme("light")}
-                className={`p-1 rounded-md transition ${
-                  theme === "light"
-                    ? "bg-white text-neutral-900 shadow-xs font-medium"
-                    : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
-                }`}
-                title="Light"
-              >
-                <Sun className="h-3.5 w-3.5" />
-              </button>
-              <button
-                onClick={() => setTheme("system")}
-                className={`p-1 rounded-md transition ${
-                  theme === "system"
-                    ? "bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-xs font-medium"
-                    : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
-                }`}
-                title="System Default"
-              >
-                <Laptop className="h-3.5 w-3.5" />
-              </button>
+            {/* Dark / Light Toggle */}
+            <div className="flex items-center p-0.5 bg-neutral-100 dark:bg-neutral-900 rounded-lg border border-neutral-200/80 dark:border-neutral-800">
               <button
                 onClick={() => setTheme("dark")}
-                className={`p-1 rounded-md transition ${
+                className={`flex items-center space-x-1.5 px-2 py-1 rounded-md text-xs transition ${
                   theme === "dark"
-                    ? "bg-neutral-800 text-white shadow-xs font-medium"
-                    : "text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+                    ? "bg-neutral-800 text-white font-medium shadow-xs"
+                    : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
                 }`}
-                title="Pure Dark"
+                title="Dark Mode"
               >
                 <Moon className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Dark</span>
+              </button>
+              <button
+                onClick={() => setTheme("light")}
+                className={`flex items-center space-x-1.5 px-2 py-1 rounded-md text-xs transition ${
+                  theme === "light"
+                    ? "bg-white text-neutral-900 font-medium shadow-xs"
+                    : "text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
+                }`}
+                title="Light Mode"
+              >
+                <Sun className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Light</span>
               </button>
             </div>
           </div>
