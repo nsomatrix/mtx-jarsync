@@ -1,5 +1,7 @@
 # MTX JarSync 1.0.0
 
+<img width="500" height="500" alt="jarsync-icon" src="https://github.com/user-attachments/assets/7ddac663-735e-46cb-9c5a-4b021c004da2" />
+
 A modern, high-performance J2ME (Java Micro Edition) multi-package management and bytecode manipulation suite. 
 
 **MTX JarSync** provides both a **Web Studio interface** (running pure TypeScript in the browser) and a **native J2ME engine** (CLDC 1.1 / MIDP 2.0 / JSR-75) to replicate, split, and merge retro mobile Java applications with full state isolation, independent RecordStore partitions, and interactive runtime switchers.
