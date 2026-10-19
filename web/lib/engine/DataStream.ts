@@ -133,7 +133,7 @@ export class DataWriter {
       const c = str.charCodeAt(i);
       if (c >= 0x0001 && c <= 0x007F) {
         utf8Bytes.push(c);
-      } else if (c > 0x07FF || c === 0) {
+      } else if (c > 0x07FF) {
         utf8Bytes.push(0xE0 | ((c >> 12) & 0x0F));
         utf8Bytes.push(0x80 | ((c >> 6) & 0x3F));
         utf8Bytes.push(0x80 | ((c >> 0) & 0x3F));

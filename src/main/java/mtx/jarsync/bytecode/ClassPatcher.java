@@ -78,7 +78,7 @@ public final class ClassPatcher {
                     case 1: // CONSTANT_Utf8
                         String val = dis.readUTF();
                         cp.addElement(new ConstantUtf8Info(val));
-                        this.utf8IndexMap.put(val, new Integer(i));
+                        this.utf8IndexMap.put(val, Integer.valueOf(i));
                         break;
                     case 3: // CONSTANT_Integer
                         cp.addElement(new ConstantIntegerInfo(dis.readInt()));
@@ -462,7 +462,7 @@ public final class ClassPatcher {
         }
         this.constantPool.addElement(new ConstantClassInfo(this.getOrCreateUtf8(className)));
         int idx = this.constantPool.size() - 1;
-        this.classIndexMap.put(className, new Integer(idx));
+        this.classIndexMap.put(className, Integer.valueOf(idx));
         return idx;
     }
 
@@ -481,9 +481,9 @@ public final class ClassPatcher {
             int idx = ((Integer) this.utf8IndexMap.get(str)).intValue();
             ConstantUtf8Info utf = (ConstantUtf8Info) this.constantPool.elementAt(idx);
             if (utf.isPatched && !utf.value.equals(str)) {
-                this.utf8IndexMap.put(utf.value, new Integer(idx));
+                this.utf8IndexMap.put(utf.value, Integer.valueOf(idx));
                 idx = this.addUtf8(str);
-                this.utf8IndexMap.put(str, new Integer(idx));
+                this.utf8IndexMap.put(str, Integer.valueOf(idx));
             }
             return idx;
         }
@@ -493,7 +493,7 @@ public final class ClassPatcher {
     private int addUtf8(String str) {
         int idx = this.constantPool.size();
         this.constantPool.addElement(new ConstantUtf8Info(str));
-        this.utf8IndexMap.put(str, new Integer(idx));
+        this.utf8IndexMap.put(str, Integer.valueOf(idx));
         return idx;
     }
 

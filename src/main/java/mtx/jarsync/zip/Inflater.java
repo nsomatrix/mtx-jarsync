@@ -184,13 +184,6 @@ public class Inflater
     mode = nowrap ? DECODE_BLOCKS : DECODE_HEADER;
   }
 
-  /**
-   * Finalizes this object.
-   */
-  protected void finalize ()
-  {
-    /* Exists only for compatibility */
-  }
 
   /**
    * Frees all objects allocated by the inflater.  There's no reason

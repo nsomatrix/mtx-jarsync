@@ -32,6 +32,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const storedTheme = useSyncExternalStore(subscribe, getStoredTheme, () => "dark" as Theme);
   const [theme, setThemeState] = useState<Theme>(storedTheme);
 
+  React.useEffect(() => {
+    setThemeState(storedTheme);
+    if (storedTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [storedTheme]);
+
   const setTheme = (t: Theme) => {
     setThemeState(t);
     try {

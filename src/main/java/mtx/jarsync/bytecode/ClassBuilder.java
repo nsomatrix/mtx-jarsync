@@ -114,7 +114,7 @@ public final class ClassBuilder {
             Enumeration utf8Keys = utf8Indices.keys();
             while (utf8Keys.hasMoreElements()) {
                 Object key = utf8Keys.nextElement();
-                utf8Indices.put(key, new Integer(nextIdx));
+                utf8Indices.put(key, Integer.valueOf(nextIdx));
                 utf8Entries.addElement(key);
                 nextIdx++;
             }
@@ -131,7 +131,7 @@ public final class ClassBuilder {
                 Object key = natKeys.nextElement();
                 StringPair pair = (StringPair) nameAndTypes.get(key);
                 constantPool.addElement(new ConstantNameAndTypeInfo(getUtf8Index(pair.a), getUtf8Index(pair.b)));
-                nameAndTypes.put(key, new Integer(++cpIndex));
+                nameAndTypes.put(key, Integer.valueOf(++cpIndex));
             }
 
             fields.addElement(new FieldInfo(10, getUtf8Index("staticvector"), getUtf8Index("Ljava/util/Vector;")));
@@ -195,7 +195,7 @@ public final class ClassBuilder {
     private static int getUtf8Index(Object key) {
         if (!utf8Indices.containsKey(key)) {
             int idx = utf8Entries.size() + utf8BaseIndex;
-            utf8Indices.put(key, new Integer(idx));
+            utf8Indices.put(key, Integer.valueOf(idx));
             utf8Entries.addElement(key);
             return idx;
         }

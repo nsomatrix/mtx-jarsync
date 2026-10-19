@@ -272,13 +272,6 @@ public class Deflater
     return totalOut;
   }
 
-  /**
-   * Finalizes this object.
-   */
-  protected void finalize()
-  {
-    /* Exists solely for compatibility.  We don't have any native state. */
-  }
 
   /**
    * Flushes the current input block.  Further calls to deflate() will

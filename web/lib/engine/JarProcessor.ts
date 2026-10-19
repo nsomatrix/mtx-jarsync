@@ -644,7 +644,8 @@ export class JarProcessor {
   private static patchSwitcherClassListRef(bytes: Uint8Array): Uint8Array {
     const target = new TextEncoder().encode('javax/microedition/lcdui/List');
     const buf = new Uint8Array(bytes);
-    const limit = buf.length - 35;
+    let len = buf.length;
+    let limit = len - 35;
 
     for (let i = 10; i < limit; i++) {
       let match = true;
@@ -655,22 +656,23 @@ export class JarProcessor {
         }
       }
       if (match) {
-        buf[i] = 108;
-        buf[i + 1] = 105;
-        buf[i + 2] = 98;
+        buf[i] = 108; // 'l'
+        buf[i + 1] = 105; // 'i'
+        buf[i + 2] = 98; // 'b'
         let p = i - 1;
-        while (buf[p] !== 1 && p > 0) {
+        while (p > 0 && buf[p] !== 1) {
           p--;
         }
         if (buf[p] === 1) {
           const oldLen = buf[p + 2];
           buf[p + 2] = oldLen - 21;
-          buf.copyWithin(i + 3, i + 24, buf.length);
-          return buf.subarray(0, buf.length - 21);
+          buf.copyWithin(i + 3, i + 24, len);
+          len -= 21;
+          limit -= 21;
         }
       }
     }
-    return buf;
+    return buf.subarray(0, len);
   }
 
   private static parseManifest(text: string): Map<string, string> {

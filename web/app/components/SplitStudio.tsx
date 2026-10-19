@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
+import JSZip from "jszip";
 import { JarMetadata, JarProcessor, SplitResult } from "../../lib/engine/JarProcessor";
 import { useLanguage } from "../../lib/i18n/LanguageContext";
 import {
@@ -136,6 +137,26 @@ export function SplitStudio() {
     a.href = url;
     const cleanName = res.fileName.endsWith(".jar") ? res.fileName : `${res.fileName}.jar`;
     a.download = cleanName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadAllZip = async () => {
+    if (splitResults.length === 0) return;
+    const zip = new JSZip();
+    for (const res of splitResults) {
+      const cleanName = res.fileName.endsWith(".jar") ? res.fileName : `${res.fileName}.jar`;
+      zip.file(cleanName, res.blob);
+    }
+    const zipBlob = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    const defaultBase = metadata?.name || "all_standalones";
+    const cleanName = defaultBase.replace(/[^a-zA-Z0-9_\-\u00C0-\u024F\u1EA0-\u1EF9]/g, "_");
+    a.download = `${cleanName}_standalones.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -609,21 +630,32 @@ export function SplitStudio() {
           )}
 
           {/* 3. Quick Selection Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs px-1 text-neutral-500 dark:text-neutral-400 pt-1">
-            <button
-              onClick={handleSelectAll}
-              className="flex items-center space-x-1.5 hover:text-neutral-900 dark:hover:text-white font-medium transition py-0.5"
-            >
-              {selectedIndices.length === splitResults.length ? (
-                <CheckSquare className="h-3.5 w-3.5 text-neutral-900 dark:text-neutral-100 shrink-0" />
-              ) : (
-                <Square className="h-3.5 w-3.5 shrink-0" />
-              )}
-              <span>
-                {selectedIndices.length === splitResults.length ? t("deselect_all") : t("select_all")}{" "}
-                {t("selected_count", { selected: selectedIndices.length, total: splitResults.length })}
-              </span>
-            </button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs px-1 text-neutral-500 dark:text-neutral-400 pt-1">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleSelectAll}
+                className="flex items-center space-x-1.5 hover:text-neutral-900 dark:hover:text-white font-medium transition py-0.5"
+              >
+                {selectedIndices.length === splitResults.length ? (
+                  <CheckSquare className="h-3.5 w-3.5 text-neutral-900 dark:text-neutral-100 shrink-0" />
+                ) : (
+                  <Square className="h-3.5 w-3.5 shrink-0" />
+                )}
+                <span>
+                  {selectedIndices.length === splitResults.length ? t("deselect_all") : t("select_all")}{" "}
+                  {t("selected_count", { selected: selectedIndices.length, total: splitResults.length })}
+                </span>
+              </button>
+              <div className="h-3 w-px bg-neutral-200 dark:border-neutral-800" />
+              <button
+                onClick={handleDownloadAllZip}
+                className="inline-flex items-center space-x-1 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white font-medium transition py-0.5"
+                title={t("btn_download_all_zip")}
+              >
+                <Download className="h-3 w-3 shrink-0" />
+                <span>{t("btn_download_all_zip")}</span>
+              </button>
+            </div>
             <span className="text-[11px] font-mono text-neutral-400 dark:text-neutral-500">
               {t("direct_launch_hint")}
             </span>
