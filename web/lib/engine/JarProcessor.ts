@@ -26,6 +26,7 @@ export interface ReplicateOptions {
   featureList: boolean;
   featureMainPageList: boolean;
   featureNoExit: boolean;
+  customIconBytes?: Uint8Array;
 }
 
 export interface SplitResult {
@@ -164,22 +165,27 @@ export class JarProcessor {
       }
     }
 
-    // Default icon
-    const iconRes = await fetch('/runtime/icon.png').then(r => r.arrayBuffer());
-    outZip.file('mtx/mid.png', new Uint8Array(iconRes));
+    // Determine master launcher icon: custom uploaded -> source game's icon -> fallback default icon
+    let masterIconBytes: Uint8Array;
+    if (options.customIconBytes && options.customIconBytes.length > 0) {
+      masterIconBytes = options.customIconBytes;
+    } else if (metadata.iconFileName && zip.file(metadata.iconFileName)) {
+      masterIconBytes = await zip.file(metadata.iconFileName)!.async('uint8array');
+    } else {
+      const iconRes = await fetch('/runtime/icon.png').then(r => r.arrayBuffer());
+      masterIconBytes = new Uint8Array(iconRes);
+    }
+
+    // Set master launcher icon in replicated JAR
+    outZip.file('mtx/mid.png', masterIconBytes);
 
     // 2. Prepare sub-app identifiers
     const timestamp = Date.now();
     const iniName = `${timestamp}.ini`;
     const pngName = `${timestamp}.png`;
 
-    // Save icon under timestamp.png
-    if (metadata.iconFileName && zip.file(metadata.iconFileName)) {
-      const iconData = await zip.file(metadata.iconFileName)!.async('uint8array');
-      outZip.file(pngName, iconData);
-    } else {
-      outZip.file(pngName, new Uint8Array(iconRes));
-    }
+    // Save game icon under timestamp.png for switcher menu
+    outZip.file(pngName, masterIconBytes);
 
     // Write original manifest properties to timestamp.ini
     let iniContent = '';
@@ -246,6 +252,10 @@ export class JarProcessor {
 
     // 5. Generate Master Manifest
     report('Writing master manifest...');
+    if (metadata.midlet2Class) {
+      combinedMidletEntries.push(`${metadata.name} Tool,/${pngName},${metadata.midlet2Class},/${iniName}`);
+    }
+
     let mf = 'Manifest-Version: 1.0\r\n';
     mf += 'MicroEdition-Configuration: CLDC-1.1\r\n';
     mf += 'MicroEdition-Profile: MIDP-2.0\r\n';
@@ -324,7 +334,6 @@ export class JarProcessor {
 
       const singleZip = new JSZip();
       const prefix = idx === 0 ? '' : `${String.fromCharCode(97 + idx)}/`;
-      const dotPrefix = idx === 0 ? '' : `${String.fromCharCode(97 + idx)}.`;
 
       let standaloneManifest = '';
       const iniFileObj = zip.file(entry.iniFile);
@@ -333,10 +342,6 @@ export class JarProcessor {
       }
 
       if (!standaloneManifest || !standaloneManifest.includes('MIDlet-1:')) {
-        const cleanClass = entry.className.startsWith(dotPrefix)
-          ? entry.className.substring(dotPrefix.length)
-          : entry.className;
-
         standaloneManifest = [
           'Manifest-Version: 1.0',
           'MicroEdition-Configuration: CLDC-1.1',
@@ -344,7 +349,7 @@ export class JarProcessor {
           'MIDlet-Version: 1.0.0',
           `MIDlet-Name: ${entry.title}`,
           `MIDlet-Vendor: MTX JarSync`,
-          `MIDlet-1: ${entry.title},/icon.png,${cleanClass}`,
+          `MIDlet-1: ${entry.title},/icon.png,${entry.className}`,
           ''
         ].join('\r\n');
       }
@@ -358,11 +363,17 @@ export class JarProcessor {
         singleZip.file('icon.png', iconData);
       }
 
-      // Copy classes (stripping clone prefix) and resources
+      // Copy classes (preserving lib/ runtime compatibility) and resources
       zip.forEach((path, fileObj) => {
         if (fileObj.dir || path.startsWith('META-INF/')) return;
-        if (path.startsWith('lib/') || path.startsWith('mtx/') || path.startsWith('MrQuyet/')) return;
+        if (path.startsWith('mtx/') || path.startsWith('MrQuyet/')) return;
         if (path.endsWith('.ini')) return;
+
+        // Retain lib/ runtime classes (lib/MIDlet.class, etc.) so split standalone apps execute independently
+        if (path.startsWith('lib/')) {
+          singleZip.file(path, fileObj.async('uint8array'));
+          return;
+        }
 
         if (idx === 0) {
           const isOtherPrefixed = /^[b-z]\//.test(path);
@@ -371,9 +382,8 @@ export class JarProcessor {
           }
         } else {
           if (path.startsWith(prefix)) {
-            const unPrefixed = path.substring(prefix.length);
-            if (unPrefixed !== 'Static.class') {
-              singleZip.file(unPrefixed, fileObj.async('uint8array'));
+            if (!path.endsWith('Static.class')) {
+              singleZip.file(path, fileObj.async('uint8array'));
             }
           } else if (!path.endsWith('.class') && !/^[b-z]\//.test(path)) {
             singleZip.file(path, fileObj.async('uint8array'));

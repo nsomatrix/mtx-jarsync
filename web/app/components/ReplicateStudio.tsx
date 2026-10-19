@@ -39,7 +39,26 @@ export function ReplicateStudio() {
     featureNoExit: true,
   });
 
+  const [customIcon, setCustomIcon] = useState<{ url: string; bytes: Uint8Array } | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const iconInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCustomIcon = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    if (!file.type.startsWith("image/") && !file.name.match(/\.(png|jpg|jpeg|gif|webp)$/i)) {
+      setErrorMessage("Please select a valid image file (.png, .jpg, .webp).");
+      return;
+    }
+    try {
+      const buf = await file.arrayBuffer();
+      const url = URL.createObjectURL(file);
+      setCustomIcon({ url, bytes: new Uint8Array(buf) });
+    } catch {
+      setErrorMessage("Failed to read image file.");
+    }
+  };
 
   const handleFile = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -114,6 +133,7 @@ export function ReplicateStudio() {
         featureList: options.featureList,
         featureMainPageList: options.featureMainPageList,
         featureNoExit: options.featureNoExit,
+        customIconBytes: customIcon?.bytes,
       };
 
       const blob = await JarProcessor.replicateJar(sourceFile, replicateOpts, (pct, status) => {
@@ -146,6 +166,7 @@ export function ReplicateStudio() {
     setMetadata(null);
     setResultBlob(null);
     setErrorMessage(null);
+    setCustomIcon(null);
   };
 
   return (
@@ -211,35 +232,92 @@ export function ReplicateStudio() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200">
           {/* Left Column: Clones & Titles */}
           <div className="lg:col-span-7 space-y-4">
+            {/* Hidden custom icon input */}
+            <input
+              type="file"
+              ref={iconInputRef}
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => handleCustomIcon(e.target.files)}
+            />
+
             {/* Source Info Card */}
             <div className="surface-card p-4 rounded-xl flex items-center justify-between">
-              <div className="flex items-center space-x-3 min-w-0">
-                <div className="h-10 w-10 shrink-0 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center overflow-hidden p-1">
-                  {metadata.iconDataUrl ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={metadata.iconDataUrl}
-                      alt={metadata.name}
-                      className="h-full w-full object-contain"
-                    />
-                  ) : (
-                    <Package className="h-5 w-5 text-neutral-400" />
-                  )}
+              <div className="flex items-center space-x-3.5 min-w-0">
+                <div
+                  onClick={() => iconInputRef.current?.click()}
+                  className="relative group cursor-pointer shrink-0"
+                  title="Click to customize master launcher icon"
+                >
+                  <div className="h-11 w-11 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 flex items-center justify-center overflow-hidden p-1 transition group-hover:border-neutral-400 dark:group-hover:border-neutral-600">
+                    {customIcon ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={customIcon.url}
+                        alt="Custom Icon"
+                        className="h-full w-full object-contain"
+                      />
+                    ) : metadata.iconDataUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={metadata.iconDataUrl}
+                        alt={metadata.name}
+                        className="h-full w-full object-contain"
+                      />
+                    ) : (
+                      <Package className="h-5 w-5 text-neutral-400" />
+                    )}
+                  </div>
+                  <div className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-white">
+                    <Upload className="h-4 w-4" />
+                  </div>
                 </div>
+
                 <div className="min-w-0">
-                  <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">
-                    {metadata.name}
-                  </h4>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                    {metadata.vendor} • {(metadata.fileSize / 1024).toFixed(1)} KB
-                  </p>
+                  <div className="flex items-center space-x-2">
+                    <h4 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                      {metadata.name}
+                    </h4>
+                    {customIcon && (
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-sm bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-800">
+                        Custom Icon
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-2 text-xs text-neutral-500 dark:text-neutral-400 truncate mt-0.5">
+                    <span>{metadata.vendor} • {(metadata.fileSize / 1024).toFixed(1)} KB</span>
+                    <span>•</span>
+                    {customIcon ? (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCustomIcon(null);
+                        }}
+                        className="text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 underline text-[11px]"
+                      >
+                        Reset Icon
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          iconInputRef.current?.click();
+                        }}
+                        className="text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-200 underline text-[11px]"
+                      >
+                        Change Icon
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
               <button
                 onClick={reset}
-                className="text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 transition px-2.5 py-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                className="text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 transition px-2.5 py-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-900 shrink-0"
               >
-                Change
+                Change JAR
               </button>
             </div>
 
