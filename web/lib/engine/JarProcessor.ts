@@ -426,7 +426,7 @@ export class JarProcessor {
       // 5. Copy classes (retaining lib/ runtime classes and Static.class) and resources
       zip.forEach((path, fileObj) => {
         if (fileObj.dir || path.startsWith('META-INF/')) return;
-        if (path.startsWith('mtx/') || path.startsWith('MrQuyet/')) return;
+        if (path.startsWith('mtx/') || path.startsWith('MrQuyet/') || path.startsWith('nhquyet/')) return;
         if (path.endsWith('.ini')) return;
 
         // Retain lib/ runtime classes (lib/MIDlet.class, etc.) so split standalone apps execute independently
@@ -544,6 +544,7 @@ export class JarProcessor {
 
     for (const [path, fileObj] of Object.entries(zip.files)) {
       if (fileObj.dir || path.startsWith('META-INF/')) continue;
+      if (path.startsWith('nhquyet/')) continue;
       // Retain runtime classes and resources
       if (path.startsWith('lib/') || path.startsWith('mtx/') || path.startsWith('MrQuyet/')) {
         if (!outZip.file(path)) {
