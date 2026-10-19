@@ -5,12 +5,12 @@ MIDlet-1: MTX JarSync,/icon.png,mtx.jarsync.Midlet
 add: Add to List
 savedir: file:///c/MultiMidlet/MtxJarSync.jar
 MIDlet-Vendor: Matrix
-MIDlet-Version: 3.6.3
+MIDlet-Version: 1.0.0
 view: Application List
 set: Settings
 icon: file:///c/icon.png
 start: Build Combined Jar
-MIDlet-Name: MTX JarSync 3.6.3
+MIDlet-Name: MTX JarSync 1.0.0
 delete: Remove from List
 selectall: Select All
 MicroEdition-Configuration: CLDC-1.1

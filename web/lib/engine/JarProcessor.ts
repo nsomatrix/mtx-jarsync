@@ -486,6 +486,8 @@ export class JarProcessor {
       displayName?: string;
       author?: string;
       language?: 'en' | 'vi';
+      instanceNames?: string[];
+      customIcon?: Uint8Array;
     },
     onProgress?: (percent: number, status: string) => void
   ): Promise<Blob> {
@@ -579,7 +581,12 @@ export class JarProcessor {
     const combinedMidletEntries: string[] = [];
     for (let i = 0; i < selectedEntries.length; i++) {
       const e = selectedEntries[i];
-      combinedMidletEntries.push(`${e.title},/${e.icon},${e.className},/${e.iniFile}`);
+      const customTitle = options?.instanceNames?.[i]?.trim() || e.title;
+      combinedMidletEntries.push(`${customTitle},/${e.icon},${e.className},/${e.iniFile}`);
+    }
+
+    if (options?.customIcon) {
+      outZip.file('mtx/mid.png', options.customIcon);
     }
 
     const defaultMergeName = options?.language === 'vi'

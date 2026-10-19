@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "=========================================================="
-echo " Building MTX JarSync 3.6.3 (Clean J2ME Tool Source)"
+echo " Building MTX JarSync 1.0.0 (Clean J2ME Tool Source)"
 echo "=========================================================="
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
