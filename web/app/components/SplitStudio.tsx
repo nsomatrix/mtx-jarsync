@@ -20,7 +20,7 @@ export function SplitStudio() {
   const [sourceFile, setSourceFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isBundling, setIsBundling] = useState(false);
+  const [isMerging, setIsMerging] = useState(false);
   const [progress, setProgress] = useState(0);
   const [statusMessage, setStatusMessage] = useState("");
   const [splitResults, setSplitResults] = useState<SplitResult[]>([]);
@@ -101,12 +101,12 @@ export function SplitStudio() {
     }
   };
 
-  const handleBundleSelected = async () => {
+  const handleMergeSelected = async () => {
     if (!sourceFile || selectedIndices.length === 0) return;
-    setIsBundling(true);
+    setIsMerging(true);
     setErrorMessage(null);
     try {
-      const bundleBlob = await JarProcessor.bundleSubApps(
+      const mergedBlob = await JarProcessor.mergeSubApps(
         sourceFile,
         selectedIndices,
         {
@@ -118,19 +118,19 @@ export function SplitStudio() {
           setStatusMessage(status);
         }
       );
-      const url = URL.createObjectURL(bundleBlob);
+      const url = URL.createObjectURL(mergedBlob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${sourceFile.name.replace(/\.[^/.]+$/, "")}_${selectedIndices.length}in1.jar`;
+      a.download = `${sourceFile.name.replace(/\.[^/.]+$/, "")}_merged_${selectedIndices.length}in1.jar`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      setErrorMessage(`Bundle failed: ${msg}`);
+      setErrorMessage(`Merge failed: ${msg}`);
     } finally {
-      setIsBundling(false);
+      setIsMerging(false);
     }
   };
 
@@ -177,7 +177,7 @@ export function SplitStudio() {
             Select a multi-game or replicated JAR to split
           </h3>
           <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 max-w-sm mx-auto leading-normal">
-            Extracts standalone single JARs that launch directly, or recombines sub-apps into customized bundles.
+            Extracts standalone single JARs that launch directly, or recombines sub-apps into customized merged JARs.
           </p>
           <button
             type="button"
@@ -189,12 +189,12 @@ export function SplitStudio() {
       )}
 
       {/* Progress state */}
-      {(isProcessing || isBundling) && (
+      {(isProcessing || isMerging) && (
         <div className="surface-card p-6 rounded-xl text-center space-y-3 animate-in fade-in duration-200">
           <Loader2 className="h-5 w-5 text-neutral-700 dark:text-neutral-300 animate-spin mx-auto" />
           <div>
             <span className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 block">
-              {statusMessage || (isBundling ? "Bundling selected apps..." : "Splitting games...")}
+              {statusMessage || (isMerging ? "Merging selected apps..." : "Splitting games...")}
             </span>
             <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-mono">{progress}%</span>
           </div>
@@ -237,7 +237,7 @@ export function SplitStudio() {
                 Extracted {splitResults.length} Sub-Applications
               </h4>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                Single JARs launch directly without switcher menu. Select multiple to bundle.
+                Single JARs launch directly without switcher menu. Select multiple to merge.
               </p>
             </div>
 
@@ -251,12 +251,12 @@ export function SplitStudio() {
 
               {selectedIndices.length >= 2 && (
                 <button
-                  onClick={handleBundleSelected}
-                  disabled={isBundling}
+                  onClick={handleMergeSelected}
+                  disabled={isMerging}
                   className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-xs"
                 >
                   <Layers className="h-3.5 w-3.5 shrink-0" />
-                  <span className="truncate">Bundle {selectedIndices.length}-in-1 JAR</span>
+                  <span className="truncate">Merge ({selectedIndices.length}-in-1)</span>
                 </button>
               )}
 
@@ -329,7 +329,7 @@ export function SplitStudio() {
                       type="button"
                       onClick={() => handleToggleSelect(idx)}
                       className="p-1 text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition shrink-0"
-                      title={isSelected ? "Deselect for bundling" : "Select for bundling"}
+                      title={isSelected ? "Deselect from merge" : "Select to merge"}
                     >
                       {isSelected ? (
                         <CheckSquare className="h-4 w-4 text-neutral-900 dark:text-neutral-100" />

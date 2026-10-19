@@ -465,9 +465,9 @@ export class JarProcessor {
   }
 
   /**
-   * Bundles a selected subset of sub-apps from an existing multi-game JAR into a new multi-JAR archive.
+   * Merges a selected subset of sub-apps from an existing multi-game JAR into a new multi-JAR archive.
    */
-  public static async bundleSubApps(
+  public static async mergeSubApps(
     sourceJar: File | Blob,
     selectedIndices: number[],
     options?: {
@@ -506,10 +506,10 @@ export class JarProcessor {
 
     const selectedEntries = subAppEntries.filter((_, idx) => selectedIndices.includes(idx));
     if (selectedEntries.length === 0) {
-      throw new Error('No valid sub-apps selected to bundle.');
+      throw new Error('No valid sub-apps selected to merge.');
     }
 
-    onProgress?.(30, 'Bundling selected applications...');
+    onProgress?.(30, 'Merging selected applications...');
     const outZip = new JSZip();
 
     // Load updated runtime overlay binaries if available
@@ -562,7 +562,7 @@ export class JarProcessor {
     }
 
     // Generate manifest
-    onProgress?.(70, 'Generating bundle manifest...');
+    onProgress?.(70, 'Generating merged manifest...');
     const combinedMidletEntries: string[] = [];
     for (let i = 0; i < selectedEntries.length; i++) {
       const e = selectedEntries[i];
@@ -588,16 +588,18 @@ export class JarProcessor {
 
     outZip.file('META-INF/MANIFEST.MF', mf);
 
-    onProgress?.(90, 'Compressing bundled archive...');
+    onProgress?.(90, 'Compressing merged archive...');
     const resultBlob = await outZip.generateAsync({
       type: 'blob',
       compression: 'DEFLATE',
       compressionOptions: { level: 9 }
     });
 
-    onProgress?.(100, 'Bundling complete');
+    onProgress?.(100, 'Merge complete');
     return resultBlob;
   }
+
+  public static bundleSubApps = JarProcessor.mergeSubApps;
 
   private static patchClassBytes(bytes: Uint8Array, midletChar: string): Uint8Array {
     const reader = new DataReader(bytes);
