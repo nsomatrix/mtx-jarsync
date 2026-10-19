@@ -14,6 +14,8 @@ import {
   ChevronDown,
   ChevronUp,
   Loader2,
+  RotateCcw,
+  RefreshCw,
 } from "lucide-react";
 
 export function ReplicateStudio() {
@@ -167,16 +169,41 @@ export function ReplicateStudio() {
     URL.revokeObjectURL(url);
   };
 
+  const resetToDefaults = () => {
+    if (!sourceFile || !metadata) return;
+    const isViet = language === "vi";
+    const defaultBase = metadata.name || sourceFile.name.replace(/\.[^/.]+$/, "");
+    setOptions({
+      appName: isViet ? `${defaultBase} Đa ứng dụng` : `${defaultBase} Multi`,
+      displayName: isViet ? `${defaultBase} Đa ứng dụng` : `${defaultBase} Multi`,
+      author: metadata.vendor || "MTX JarSync",
+      featureScreenshot: false,
+      featureList: true,
+      featureMainPageList: false,
+      featureNoExit: true,
+    });
+    setCloneCount(2);
+    const initialNames: string[] = [];
+    for (let i = 1; i <= 26; i++) {
+      initialNames.push(isViet ? `${defaultBase} (Bản sao ${i})` : `${defaultBase} ${i}`);
+    }
+    setCloneNames(initialNames);
+    setCustomIcon(null);
+    setResultBlob(null);
+    setErrorMessage(null);
+  };
+
   const reset = () => {
     setSourceFile(null);
     setMetadata(null);
     setResultBlob(null);
     setErrorMessage(null);
     setCustomIcon(null);
+    setIsProcessing(false);
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 flex flex-col space-y-6">
       {/* Upload Dropzone */}
       {!sourceFile && (
         <div
@@ -187,7 +214,7 @@ export function ReplicateStudio() {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border border-dashed rounded-xl p-6 sm:p-12 text-center cursor-pointer transition-all duration-200 ${
+          className={`flex-1 min-h-[300px] sm:min-h-[380px] flex flex-col items-center justify-center border border-dashed rounded-2xl p-6 sm:p-14 text-center cursor-pointer transition-all duration-200 ${
             isDragging
               ? "border-neutral-500 bg-neutral-100/80 dark:bg-neutral-900"
               : "border-neutral-300 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-700 bg-white dark:bg-neutral-950/50 shadow-xs"
@@ -200,25 +227,27 @@ export function ReplicateStudio() {
             className="hidden"
             onChange={(e) => handleFile(e.target.files)}
           />
-          <div className="mx-auto w-12 h-12 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 flex items-center justify-center mb-3">
-            {isLoadingFile ? (
-              <Loader2 className="h-5 w-5 animate-spin text-neutral-500" />
-            ) : (
-              <Upload className="h-5 w-5" />
-            )}
+          <div className="flex flex-col items-center justify-center max-w-md mx-auto my-auto py-2">
+            <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 flex items-center justify-center mb-4 shadow-2xs">
+              {isLoadingFile ? (
+                <Loader2 className="h-6 w-6 animate-spin text-neutral-500" />
+              ) : (
+                <Upload className="h-6 w-6" />
+              )}
+            </div>
+            <h3 className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-neutral-100">
+              {isLoadingFile ? t("reading_jar") : t("drop_jar_title")}
+            </h3>
+            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1.5 max-w-sm mx-auto leading-relaxed">
+              {t("drop_jar_subtitle")}
+            </p>
+            <button
+              type="button"
+              className="mt-5 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition active:scale-95 shadow-xs"
+            >
+              {t("browse_file")}
+            </button>
           </div>
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-            {isLoadingFile ? t("reading_jar") : t("drop_jar_title")}
-          </h3>
-          <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 max-w-sm mx-auto leading-normal">
-            {t("drop_jar_subtitle")}
-          </p>
-          <button
-            type="button"
-            className="mt-4 px-4 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition active:scale-95 shadow-xs"
-          >
-            {t("browse_file")}
-          </button>
         </div>
       )}
 
@@ -319,12 +348,25 @@ export function ReplicateStudio() {
                   </div>
                 </div>
               </div>
-              <button
-                onClick={reset}
-                className="text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 transition px-2.5 py-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-900 self-end sm:self-auto shrink-0"
-              >
-                {t("change_file")}
-              </button>
+              <div className="flex items-center gap-1.5 self-end sm:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={resetToDefaults}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 transition px-2 py-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                  title={t("btn_reset_defaults")}
+                >
+                  <RotateCcw className="h-3 w-3 shrink-0" />
+                  <span>{t("btn_reset_defaults")}</span>
+                </button>
+                <div className="h-3 w-px bg-neutral-200 dark:bg-neutral-800" />
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="text-xs font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 transition px-2 py-1 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-900 shrink-0"
+                >
+                  {t("change_file")}
+                </button>
+              </div>
             </div>
 
             {/* Clone Count Selector */}
@@ -519,7 +561,7 @@ export function ReplicateStudio() {
                   </span>
                 </button>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <button
                     onClick={handleDownload}
                     className="w-full py-2.5 px-3 sm:px-4 rounded-lg font-semibold text-xs bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 active:scale-[0.99] flex items-center justify-center space-x-2 transition shadow-xs"
@@ -527,8 +569,30 @@ export function ReplicateStudio() {
                     <Download className="h-3.5 w-3.5 shrink-0" />
                     <span className="truncate">{t("btn_download_replicated")} ({(resultBlob.size / 1024).toFixed(1)} KB)</span>
                   </button>
-                  <div className="flex items-center justify-center space-x-1.5 text-xs text-neutral-600 dark:text-neutral-400">
-                    <Check className="h-3.5 w-3.5 shrink-0" />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setResultBlob(null)}
+                      className="w-full py-2 px-2.5 rounded-lg text-xs font-medium border border-neutral-200/80 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-900 flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-2xs"
+                      title={t("btn_reconfigure")}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{t("btn_reconfigure")}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={reset}
+                      className="w-full py-2 px-2.5 rounded-lg text-xs font-medium border border-neutral-200/80 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-900 flex items-center justify-center space-x-1.5 transition active:scale-95 shadow-2xs"
+                      title={t("replicate_another")}
+                    >
+                      <RefreshCw className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{t("replicate_another")}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-center space-x-1.5 text-xs text-neutral-600 dark:text-neutral-400 pt-0.5">
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
                     <span className="truncate">{t("success_replicate_title")}</span>
                   </div>
                 </div>

@@ -13,6 +13,7 @@ import {
   Square,
   Layers,
   Zap,
+  RotateCcw,
 } from "lucide-react";
 
 export function SplitStudio() {
@@ -131,10 +132,17 @@ export function SplitStudio() {
     setSplitResults([]);
     setSelectedIndices([]);
     setErrorMessage(null);
+    setIsProcessing(false);
+    setIsMerging(false);
+    setProgress(0);
+    setStatusMessage("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex-1 flex flex-col space-y-6">
       {/* Upload Dropzone */}
       {!sourceFile && (
         <div
@@ -149,7 +157,7 @@ export function SplitStudio() {
             handleFile(e.dataTransfer.files);
           }}
           onClick={() => fileInputRef.current?.click()}
-          className={`border border-dashed rounded-xl p-6 sm:p-14 text-center cursor-pointer transition-all duration-200 ${
+          className={`flex-1 min-h-[300px] sm:min-h-[380px] flex flex-col items-center justify-center border border-dashed rounded-2xl p-6 sm:p-14 text-center cursor-pointer transition-all duration-200 ${
             isDragging
               ? "border-neutral-500 bg-neutral-100/80 dark:bg-neutral-900"
               : "border-neutral-300 dark:border-neutral-800 hover:border-neutral-400 dark:hover:border-neutral-700 bg-white dark:bg-neutral-950/50 shadow-xs"
@@ -162,21 +170,23 @@ export function SplitStudio() {
             className="hidden"
             onChange={(e) => handleFile(e.target.files)}
           />
-          <div className="mx-auto w-12 h-12 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 flex items-center justify-center mb-3">
-            <Scissors className="h-5 w-5" />
+          <div className="flex flex-col items-center justify-center max-w-md mx-auto my-auto py-2">
+            <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-800 text-neutral-800 dark:text-neutral-200 flex items-center justify-center mb-4 shadow-2xs">
+              <Scissors className="h-6 w-6" />
+            </div>
+            <h3 className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-neutral-100">
+              {t("split_drop_title")}
+            </h3>
+            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1.5 max-w-sm mx-auto leading-relaxed">
+              {t("split_drop_subtitle")}
+            </p>
+            <button
+              type="button"
+              className="mt-5 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition active:scale-95 shadow-xs"
+            >
+              {t("browse_file")}
+            </button>
           </div>
-          <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-            {t("split_drop_title")}
-          </h3>
-          <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-1 max-w-sm mx-auto leading-normal">
-            {t("split_drop_subtitle")}
-          </p>
-          <button
-            type="button"
-            className="mt-4 px-4 py-1.5 rounded-lg text-xs font-semibold bg-neutral-900 text-white dark:bg-white dark:text-black hover:opacity-90 transition active:scale-95 shadow-xs"
-          >
-            {t("browse_file")}
-          </button>
         </div>
       )}
 
@@ -235,10 +245,13 @@ export function SplitStudio() {
 
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <button
+                type="button"
                 onClick={resetAll}
-                className="flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition hover:bg-neutral-100 dark:hover:bg-neutral-900 text-center shrink-0"
+                className="flex-1 sm:flex-initial px-3 py-1.5 rounded-lg text-xs font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition hover:bg-neutral-100 dark:hover:bg-neutral-900 text-center shrink-0 flex items-center justify-center space-x-1.5 border border-neutral-200/80 dark:border-neutral-800 shadow-2xs"
+                title={t("split_another")}
               >
-                {t("split_another")}
+                <RotateCcw className="h-3.5 w-3.5 shrink-0" />
+                <span>{t("split_another")}</span>
               </button>
 
               {selectedIndices.length >= 2 && (

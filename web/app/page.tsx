@@ -12,14 +12,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col justify-between selection:bg-neutral-900 selection:text-white dark:selection:bg-neutral-100 dark:selection:text-black">
-      <div>
+      <div className="flex-1 flex flex-col">
         {/* Navigation Bar */}
         <Navbar activeTab={activeTab} setActiveTab={setActiveTab} />
 
         {/* Content Container */}
-        <main className="w-full max-w-5xl mx-auto px-3.5 sm:px-6 pt-7 sm:pt-9 pb-10 sm:pb-14 overflow-x-hidden">
+        <main className="flex-1 flex flex-col w-full max-w-5xl mx-auto px-3.5 sm:px-6 pt-7 sm:pt-9 pb-8 sm:pb-10 overflow-x-hidden">
           {/* Section Header */}
-          <div className="mb-6 sm:mb-8">
+          <div className="mb-6 sm:mb-8 shrink-0">
             <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-neutral-900 dark:text-neutral-100">
               {activeTab === "replicate" ? t("page_replicate_title") : t("page_split_title")}
             </h1>
@@ -28,12 +28,14 @@ export default function Home() {
             </p>
           </div>
 
-          {activeTab === "replicate" ? <ReplicateStudio /> : <SplitStudio />}
+          <div className="flex-1 flex flex-col">
+            {activeTab === "replicate" ? <ReplicateStudio /> : <SplitStudio />}
+          </div>
         </main>
       </div>
 
       {/* Unified Modern Footer */}
-      <footer className="w-full border-t border-neutral-200/80 dark:border-neutral-900 bg-neutral-50/60 dark:bg-neutral-950/60 py-7 sm:py-8 mt-12 sm:mt-16 transition-colors">
+      <footer className="w-full border-t border-neutral-200/80 dark:border-neutral-900 bg-neutral-50/60 dark:bg-neutral-950/60 py-7 sm:py-8 mt-auto transition-colors">
         <div className="max-w-5xl mx-auto px-3.5 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
           {/* 1. JarSync GitHub Link Badge */}
           <div className="flex items-center shrink-0">

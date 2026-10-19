@@ -106,7 +106,7 @@ export class JarProcessor {
   }
 
   /**
-   * Replicates a single J2ME JAR N times (e.g. 2 to 26 accounts/clones)
+   * Replicates a single J2ME JAR into multiple isolated instances/clones
    * into a single multi-session JAR with full state and bytecode isolation,
    * static initializer cloning, and in-game switching overlay.
    */
